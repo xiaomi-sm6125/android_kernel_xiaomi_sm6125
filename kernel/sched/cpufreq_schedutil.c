@@ -18,6 +18,9 @@
 #include <trace/events/power.h>
 #include <linux/sched/sysctl.h>
 #include "sched.h"
+#include "tune.h"
+
+unsigned long cpu_util_freq(int cpu);
 
 #define SUGOV_KTHREAD_PRIORITY	50
 
@@ -309,9 +312,14 @@ static void sugov_get_util(unsigned long *util, unsigned long *max, int cpu,
 	s64 delta;
 
 	max_cap = arch_scale_cpu_capacity(NULL, cpu);
-	*max = max_cap;
 
-	*util = boosted_cpu_util(cpu, &loadcpu->walt_load);
+#ifdef CONFIG_SCHED_TUNE
+	*util = stune_util(cpu);
+#else
+	*util = cpu_util_freq(cpu);
+#endif
+	*util = min(*util, max_cap);
+	*max = max_cap;
 
 	if (likely(use_pelt())) {
 		sched_avg_update(rq);
