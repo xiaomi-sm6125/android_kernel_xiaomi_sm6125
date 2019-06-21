@@ -322,6 +322,7 @@ static void sugov_get_util(unsigned long *util, unsigned long *max, int cpu,
 		rt = (rt * max_cap) >> SCHED_CAPACITY_SHIFT;
 		*util = min(*util + rt, max_cap);
 	}
+	*util = uclamp_util(rq, *util);
 }
 
 static void sugov_set_iowait_boost(struct sugov_cpu *sg_cpu, u64 time,
