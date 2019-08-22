@@ -1,0 +1,5 @@
+config MACH_XIAOMI_LAUREL_SPROUT
+	bool "Xiaomi Mi A3"
+	depends on ARCH_TRINKET
+	help
+	  Support for Xiaomi Mi A3.
