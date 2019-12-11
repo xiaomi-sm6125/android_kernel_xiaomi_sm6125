@@ -7943,10 +7943,15 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 			}
 
 			/*
-			 * Skip processing placement further if we are visiting
-			 * cpus with lower capacity than start cpu
+			 * Skip CPUs that cannot satisfy the capacity request.
+			 * IOW, placing the task there would make the CPU
+			 * overutilized. Take uclamp into account to see how
+			 * much capacity we can get out of the CPU; this is
+			 * aligned with schedutil_cpu_util().
 			 */
-			if (capacity_orig < capacity_orig_of(cpu))
+			new_util = uclamp_rq_util_with(cpu_rq(cpu), new_util, p);
+			if ((new_util * capacity_margin) >
+			    (capacity_orig * SCHED_CAPACITY_SCALE))
 				continue;
 
 
