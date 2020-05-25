@@ -920,6 +920,11 @@ static int dsi_panel_update_backlight_external(struct dsi_panel *panel, u32 bl_l
 }
 #endif
 
+static u32 dsi_panel_get_backlight(struct dsi_panel *panel)
+{
+	return panel->bl_config.bl_level;
+}
+
 int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 {
 	int rc = 0;
