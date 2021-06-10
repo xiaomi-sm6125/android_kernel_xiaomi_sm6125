@@ -73,6 +73,7 @@
  * SCRATCH MEMORY: The scratch memory is one page worth of data that
  * is mapped into the GPU. This allows for some 'shared' data between
  * the GPU and CPU.
+ * the GPU and CPU.
  *
  * Used Data:
  * Offset: Length(bytes): What

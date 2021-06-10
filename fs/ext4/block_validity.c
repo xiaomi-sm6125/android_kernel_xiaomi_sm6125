@@ -3,6 +3,7 @@
  *  linux/fs/ext4/block_validity.c
  *
  * Copyright (C) 2009
+ * Copyright (C) 2021 XiaoMi, Inc.
  * Theodore Ts'o (tytso@mit.edu)
  *
  * Track which blocks in the filesystem are metadata blocks that
@@ -272,6 +273,11 @@ int ext4_check_blockref(const char *function, unsigned int line,
 	struct ext4_super_block *es = EXT4_SB(inode->i_sb)->s_es;
 	__le32 *bref = p;
 	unsigned int blk;
+
+	if (ext4_has_feature_journal(inode->i_sb) &&
+	    (inode->i_ino ==
+	     le32_to_cpu(EXT4_SB(inode->i_sb)->s_es->s_journal_inum)))
+		return 0;
 
 	if (ext4_has_feature_journal(inode->i_sb) &&
 	    (inode->i_ino ==

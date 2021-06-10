@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2001, 2002 Sistina Software (UK) Limited.
+ * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright (C) 2004-2008 Red Hat, Inc. All rights reserved.
  *
  * This file is released under the GPL.
@@ -25,6 +26,8 @@
 #include <linux/delay.h>
 #include <linux/wait.h>
 #include <linux/pr.h>
+#include <linux/blk-crypto.h>
+#include <linux/keyslot-manager.h>
 #include <linux/blk-crypto.h>
 #include <linux/keyslot-manager.h>
 
@@ -1256,6 +1259,8 @@ static int clone_bio(struct dm_target_io *tio, struct bio *bio,
 
 	bio_crypt_clone(clone, bio, GFP_NOIO);
 
+	bio_crypt_clone(clone, bio, GFP_NOIO);
+
 	if (unlikely(bio_integrity(bio) != NULL)) {
 		int r;
 		if (unlikely(!dm_target_has_integrity(tio->ti->type) &&
@@ -1664,8 +1669,11 @@ void dm_init_normal_md_queue(struct mapped_device *md)
 	 * Initialize aspects of queue that aren't relevant for blk-mq
 	 */
 	md->queue->backing_dev_info->congested_data = md;
+	md->queue->backing_dev_info->congested_data = md;
 	md->queue->backing_dev_info->congested_fn = dm_any_congested;
 }
+
+static void dm_destroy_inline_encryption(struct request_queue *q);
 
 static void dm_destroy_inline_encryption(struct request_queue *q);
 
@@ -1695,7 +1703,10 @@ static void cleanup_mapped_device(struct mapped_device *md)
 
 	if (md->queue) {
 		dm_destroy_inline_encryption(md->queue);
+	if (md->queue) {
+		dm_destroy_inline_encryption(md->queue);
 		blk_cleanup_queue(md->queue);
+	}
 	}
 
 	cleanup_srcu_struct(&md->io_barrier);
@@ -1760,6 +1771,12 @@ static struct mapped_device *alloc_dev(int minor)
 		goto bad;
 
 	dm_init_md_queue(md);
+	/*
+	 * default to bio-based required ->make_request_fn until DM
+	 * table is loaded and md->type established. If request-based
+	 * table is loaded: blk-mq will override accordingly.
+	 */
+	blk_queue_make_request(md->queue, dm_make_request);
 	/*
 	 * default to bio-based required ->make_request_fn until DM
 	 * table is loaded and md->type established. If request-based
@@ -2243,6 +2260,12 @@ int dm_setup_md_queue(struct mapped_device *md, struct dm_table *t)
 	case DM_TYPE_NONE:
 		WARN_ON_ONCE(true);
 		break;
+	}
+
+	r = dm_init_inline_encryption(md);
+	if (r) {
+		DMERR("Cannot initialize inline encryption");
+		return r;
 	}
 
 	r = dm_init_inline_encryption(md);

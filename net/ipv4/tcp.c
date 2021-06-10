@@ -2388,6 +2388,7 @@ int tcp_disconnect(struct sock *sk, int flags)
 	tp->is_sack_reneg = 0;
 	tcp_clear_retrans(tp);
 	tp->total_retrans = 0;
+	tp->total_retrans = 0;
 	inet_csk_delack_init(sk);
 	/* Initialize rcv_mss to TCP_MIN_MSS to avoid division by 0
 	 * issue in __tcp_select_window()
@@ -2400,8 +2401,12 @@ int tcp_disconnect(struct sock *sk, int flags)
 	tcp_saved_syn_free(tp);
 	tp->segs_in = 0;
 	tp->segs_out = 0;
+	tp->segs_in = 0;
+	tp->segs_out = 0;
 	tp->bytes_acked = 0;
 	tp->bytes_received = 0;
+	tp->data_segs_in = 0;
+	tp->data_segs_out = 0;
 	tp->data_segs_in = 0;
 	tp->data_segs_out = 0;
 

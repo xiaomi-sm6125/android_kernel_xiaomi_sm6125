@@ -6,6 +6,7 @@
  * file.
  *
  * Copyright (C) 2015, Google, Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
  *
  * Written by Michael Halcrow, 2015.
  * Modified by Jaegeuk Kim, 2015.
@@ -70,6 +71,10 @@ struct fscrypt_operations {
 	bool (*has_stable_inodes)(struct super_block *sb);
 	void (*get_ino_and_lblk_bits)(struct super_block *sb,
 				      int *ino_bits_ret, int *lblk_bits_ret);
+	bool (*inline_crypt_enabled)(struct super_block *sb);
+	int (*get_num_devices)(struct super_block *sb);
+	void (*get_devices)(struct super_block *sb,
+			    struct request_queue **devs);
 	bool (*inline_crypt_enabled)(struct super_block *sb);
 	int (*get_num_devices)(struct super_block *sb);
 	void (*get_devices)(struct super_block *sb,
@@ -329,6 +334,11 @@ static inline int fscrypt_ioctl_get_nonce(struct file *filp, void __user *arg)
 	return -EOPNOTSUPP;
 }
 
+static inline int fscrypt_ioctl_get_nonce(struct file *filp, void __user *arg)
+{
+	return -EOPNOTSUPP;
+}
+
 static inline int fscrypt_has_permitted_context(struct inode *parent,
 						struct inode *child)
 {
@@ -448,6 +458,7 @@ static inline void fscrypt_fname_free_buffer(struct fscrypt_str *crypto_str)
 }
 
 static inline int fscrypt_fname_disk_to_usr(const struct inode *inode,
+static inline int fscrypt_fname_disk_to_usr(const struct inode *inode,
 					    u32 hash, u32 minor_hash,
 					    const struct fscrypt_str *iname,
 					    struct fscrypt_str *oname)
@@ -462,6 +473,13 @@ static inline bool fscrypt_match_name(const struct fscrypt_name *fname,
 	if (de_name_len != fname->disk_name.len)
 		return false;
 	return !memcmp(de_name, fname->disk_name.name, fname->disk_name.len);
+}
+
+static inline u64 fscrypt_fname_siphash(const struct inode *dir,
+					const struct qstr *name)
+{
+	WARN_ON_ONCE(1);
+	return 0;
 }
 
 static inline u64 fscrypt_fname_siphash(const struct inode *dir,
@@ -511,6 +529,13 @@ static inline int __fscrypt_prepare_lookup(struct inode *dir,
 					   struct fscrypt_name *fname)
 {
 	return -EOPNOTSUPP;
+}
+
+static inline int fscrypt_prepare_setflags(struct inode *inode,
+					   unsigned int oldflags,
+					   unsigned int flags)
+{
+	return 0;
 }
 
 static inline int fscrypt_prepare_setflags(struct inode *inode,
@@ -734,6 +759,9 @@ static inline int fscrypt_prepare_rename(struct inode *old_dir,
  * filenames are presented in encrypted form.  Therefore, we'll try to set up
  * the directory's encryption key, but even without it the lookup can continue.
  *
+ * After calling this function, a filesystem should ensure that it's dentry
+ * operations contain fscrypt_d_revalidate if DCACHE_ENCRYPTED_NAME was set,
+ * so that the dentry can be invalidated if the key is later added.
  * After calling this function, a filesystem should ensure that it's dentry
  * operations contain fscrypt_d_revalidate if DCACHE_ENCRYPTED_NAME was set,
  * so that the dentry can be invalidated if the key is later added.

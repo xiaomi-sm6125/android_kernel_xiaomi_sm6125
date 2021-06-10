@@ -2,6 +2,7 @@
  * This contains encryption functions for per-file encryption.
  *
  * Copyright (C) 2015, Google, Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright (C) 2015, Motorola Mobility
  *
  * Written by Michael Halcrow, 2014.
@@ -26,6 +27,7 @@
 #include <linux/ratelimit.h>
 #include <crypto/skcipher.h>
 #include "fscrypt_private.h"
+#include <linux/genhd.h>
 #include <linux/genhd.h>
 
 static unsigned int num_prealloc_crypto_pages = 32;
@@ -77,11 +79,24 @@ EXPORT_SYMBOL(fscrypt_free_bounce_page);
  * needs to know about any IV generation methods where the low bits of IV don't
  * simply contain the lblk_num (e.g., IV_INO_LBLK_32).
  */
+/*
+ * Generate the IV for the given logical block number within the given file.
+ * For filenames encryption, lblk_num == 0.
+ *
+ * Keep this in sync with fscrypt_limit_dio_pages().  fscrypt_limit_dio_pages()
+ * needs to know about any IV generation methods where the low bits of IV don't
+ * simply contain the lblk_num (e.g., IV_INO_LBLK_32).
+ */
 void fscrypt_generate_iv(union fscrypt_iv *iv, u64 lblk_num,
 			 const struct fscrypt_info *ci)
 {
 	u8 flags = fscrypt_policy_flags(&ci->ci_policy);
 
+	bool inlinecrypt = false;
+
+#ifdef CONFIG_FS_ENCRYPTION_INLINE_CRYPT
+	inlinecrypt = ci->ci_inlinecrypt;
+#endif
 	bool inlinecrypt = false;
 
 #ifdef CONFIG_FS_ENCRYPTION_INLINE_CRYPT
@@ -114,6 +129,16 @@ void fscrypt_generate_iv(union fscrypt_iv *iv, u64 lblk_num,
 		lblk_num = (u32)(ci->ci_hashed_ino + lblk_num);
 	} else if (flags & FSCRYPT_POLICY_FLAG_DIRECT_KEY) {
 		memcpy(iv->nonce, ci->ci_nonce, FS_KEY_DERIVATION_NONCE_SIZE);
+	} else if ((fscrypt_policy_contents_mode(&ci->ci_policy) ==
+						 FSCRYPT_MODE_PRIVATE)
+						 && inlinecrypt) {
+		if (ci->ci_inode->i_sb->s_type->name) {
+			if (!strcmp(ci->ci_inode->i_sb->s_type->name, "f2fs")) {
+				WARN_ON_ONCE(lblk_num > U32_MAX);
+				WARN_ON_ONCE(ci->ci_inode->i_ino > U32_MAX);
+				lblk_num |= (u64)ci->ci_inode->i_ino << 32;
+			}
+		}
 	}
 	iv->lblk_num = cpu_to_le64(lblk_num);
 }
@@ -129,6 +154,7 @@ int fscrypt_crypt_block(const struct inode *inode, fscrypt_direction_t rw,
 	DECLARE_CRYPTO_WAIT(wait);
 	struct scatterlist dst, src;
 	struct fscrypt_info *ci = inode->i_crypt_info;
+	struct crypto_skcipher *tfm = ci->ci_key.tfm;
 	struct crypto_skcipher *tfm = ci->ci_key.tfm;
 	int res = 0;
 
@@ -174,6 +200,7 @@ int fscrypt_crypt_block(const struct inode *inode, fscrypt_direction_t rw,
  * @offs:      Byte offset within @page of the first block to encrypt.  Must be
  *		a multiple of the filesystem's block size.
  * @gfp_flags: Memory allocation flags.  See details below.
+ * @gfp_flags: Memory allocation flags.  See details below.
  *
  * A new bounce page is allocated, and the specified block(s) are encrypted into
  * it.  In the bounce page, the ciphertext block(s) will be located at the same
@@ -182,6 +209,11 @@ int fscrypt_crypt_block(const struct inode *inode, fscrypt_direction_t rw,
  * blocksize == PAGE_SIZE and the whole page is encrypted at once.
  *
  * This is for use by the filesystem's ->writepages() method.
+ *
+ * The bounce page allocation is mempool-backed, so it will always succeed when
+ * @gfp_flags includes __GFP_DIRECT_RECLAIM, e.g. when it's GFP_NOFS.  However,
+ * only the first page of each bio can be allocated this way.  To prevent
+ * deadlocks, for any additional pages a mask like GFP_NOWAIT must be used.
  *
  * The bounce page allocation is mempool-backed, so it will always succeed when
  * @gfp_flags includes __GFP_DIRECT_RECLAIM, e.g. when it's GFP_NOFS.  However,

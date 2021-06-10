@@ -278,7 +278,15 @@ deinit_platform_res:
 		if (rc)
 			CAM_ERR(CAM_LRME,
 				"Error in LRME soc deinit, rc=%d", rc);
+	if (lrme_hw) {
+		rc = cam_lrme_soc_deinit_resources(&lrme_hw->soc_info);
+		if (rc)
+			CAM_ERR(CAM_LRME,
+				"Error in LRME soc deinit, rc=%d", rc);
 
+		mutex_destroy(&lrme_hw->hw_mutex);
+		kfree(lrme_hw);
+	}
 		mutex_destroy(&lrme_hw->hw_mutex);
 		kfree(lrme_hw);
 	}

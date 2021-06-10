@@ -699,13 +699,20 @@ static int __cam_req_mgr_check_sync_for_mslave(
 	struct cam_req_mgr_core_link *link,
 	struct cam_req_mgr_slot *slot,
 	uint64_t request_id)
+	struct cam_req_mgr_slot *slot,
+	uint64_t request_id)
 {
 	struct cam_req_mgr_core_link *sync_link = NULL;
 	struct cam_req_mgr_slot      *sync_slot = NULL;
 	struct cam_req_mgr_slot   *sync_rd_slot = NULL;
+	struct cam_req_mgr_slot   *sync_rd_slot = NULL;
 	int sync_slot_idx = 0, prev_idx, next_idx, rd_idx, sync_rd_idx, rc = 0;
 	int64_t req_id = 0, sync_req_id = 0;
 	int32_t sync_num_slots = 0;
+	uint64_t sync_frame_duration = 0;
+	int32_t sync_req_status = 0;
+	uint64_t sof_timestamp_delta = 0;
+	int sync_link_idx = 0;
 	uint64_t sync_frame_duration = 0;
 	int32_t sync_req_status = 0;
 	uint64_t sof_timestamp_delta = 0;
@@ -720,6 +727,12 @@ static int __cam_req_mgr_check_sync_for_mslave(
 	req_id = slot->req_id;
 	sync_num_slots = sync_link->req.in_q->num_slots;
 	sync_rd_idx = sync_link->req.in_q->rd_idx;
+	sync_rd_slot = &sync_link->req.in_q->slot[sync_rd_idx];
+
+	sof_timestamp_delta =
+		link->sof_timestamp >= sync_link->sof_timestamp
+		? link->sof_timestamp - sync_link->sof_timestamp
+		: sync_link->sof_timestamp - link->sof_timestamp;
 	sync_rd_slot = &sync_link->req.in_q->slot[sync_rd_idx];
 
 	sof_timestamp_delta =
@@ -754,6 +767,10 @@ static int __cam_req_mgr_check_sync_for_mslave(
 			sync_link->req.in_q->slot[sync_rd_idx].req_id);
 		return -EINVAL;
 	}
+
+	if (sync_link->prev_sof_timestamp)
+		sync_frame_duration = sync_link->sof_timestamp -
+			sync_link->prev_sof_timestamp;
 
 	if (sync_link->prev_sof_timestamp)
 		sync_frame_duration = sync_link->sof_timestamp -
@@ -847,6 +864,31 @@ static int __cam_req_mgr_check_sync_for_mslave(
 				"Req: %lld [slave] not ready on link: %x, rc=%d",
 				req_id, link->link_hdl, rc);
 			return rc;
+		}
+
+		sync_link_idx = __cam_req_mgr_find_slot_for_req(
+				sync_link->req.in_q, request_id);
+		if (sync_link_idx != -1) {
+			sync_req_status =
+				sync_link->req.in_q->slot[sync_link_idx].status;
+			if (sync_req_status != CRM_SLOT_STATUS_REQ_APPLIED) {
+				CAM_DBG(CAM_CRM,
+					"Skipping initial sync req %lld id %d as master not applied",
+					request_id, sync_link_idx);
+				return -EINVAL;
+			}
+		} else
+			sync_req_status = 0;
+
+		if ((sync_link->initial_sync_req == req_id) &&
+			(sync_req_status == CRM_SLOT_STATUS_REQ_APPLIED) &&
+			(sof_timestamp_delta  < (sync_frame_duration / 2)) &&
+			(((sync_link_idx - sync_rd_idx + sync_num_slots) %
+			sync_num_slots) <= 1) &&
+			(sync_rd_slot->status !=
+			CRM_SLOT_STATUS_REQ_APPLIED)) {
+			CAM_DBG(CAM_CRM, "Skipping initial sync req for slave");
+			return -EINVAL;
 		}
 
 		sync_link_idx = __cam_req_mgr_find_slot_for_req(
@@ -1260,6 +1302,7 @@ static int __cam_req_mgr_process_req(struct cam_req_mgr_core_link *link,
 				}
 
 				rc =  __cam_req_mgr_check_sync_for_mslave(
+					link, slot, trigger_data->req_id);
 					link, slot, trigger_data->req_id);
 			} else {
 				rc = __cam_req_mgr_check_sync_req_is_ready(
@@ -2315,6 +2358,42 @@ static void cam_req_mgr_process_reset_for_dual_link(
 	}
 }
 
+static void cam_req_mgr_process_reset_for_dual_link(
+	struct cam_req_mgr_core_link *link,
+	struct cam_req_mgr_trigger_notify *trigger_data)
+{
+	int32_t                             idx = -1;
+	int32_t                             sync_idx = -1;
+	struct cam_req_mgr_req_queue        *in_q = NULL;
+	struct cam_req_mgr_req_queue        *sync_in_q = NULL;
+
+	in_q = link->req.in_q;
+	sync_in_q = link->sync_link->req.in_q;
+
+	sync_idx = __cam_req_mgr_find_slot_for_req(sync_in_q,
+			trigger_data->req_id);
+	if (link->is_master)
+		__cam_req_mgr_dec_idx(&sync_idx,
+			(link->max_delay - link->sync_link->max_delay),
+			sync_in_q->num_slots);
+	else
+		__cam_req_mgr_inc_idx(&sync_idx,
+			(link->sync_link->max_delay - link->max_delay),
+			sync_in_q->num_slots);
+	if (sync_idx != -1 &&
+		(sync_in_q->slot[sync_in_q->rd_idx].status ==
+		CRM_SLOT_STATUS_REQ_APPLIED)) {
+		idx = __cam_req_mgr_find_slot_for_req(in_q,
+			trigger_data->req_id);
+		CAM_DBG(CAM_CRM, "Reset req: %lld idx: %d link_hdl: %x",
+			trigger_data->req_id, idx,
+			link->link_hdl);
+		if (idx == in_q->last_applied_idx)
+			in_q->last_applied_idx = -1;
+		__cam_req_mgr_reset_req_slot(link, idx);
+	}
+}
+
 /**
  * cam_req_mgr_process_trigger()
  *
@@ -2365,6 +2444,18 @@ static int cam_req_mgr_process_trigger(void *priv, void *data)
 					in_q->last_applied_idx = -1;
 				__cam_req_mgr_reset_req_slot(link, idx);
 			}
+		if (link->sync_link &&
+			(link->is_master || link->sync_link->is_master)) {
+			cam_req_mgr_process_reset_for_dual_link(link,
+				trigger_data);
+		} else {
+			idx = __cam_req_mgr_find_slot_for_req(in_q,
+				trigger_data->req_id);
+			if (idx >= 0) {
+				if (idx == in_q->last_applied_idx)
+					in_q->last_applied_idx = -1;
+				__cam_req_mgr_reset_req_slot(link, idx);
+			}
 		}
 	}
 
@@ -2398,6 +2489,8 @@ static int cam_req_mgr_process_trigger(void *priv, void *data)
 			CAM_DBG(CAM_REQ,
 				"No pending req to apply to lower pd devices");
 			rc = 0;
+			__cam_req_mgr_inc_idx(&in_q->rd_idx,
+				1, in_q->num_slots);
 			__cam_req_mgr_inc_idx(&in_q->rd_idx,
 				1, in_q->num_slots);
 			goto release_lock;
@@ -3309,6 +3402,7 @@ int cam_req_mgr_schedule_request(
 			"request %lld is flushed, last_flush_id to flush %u",
 			sched_req->req_id, link->last_flush_id);
 		rc = -EBADR;
+		rc = -EBADR;
 		goto end;
 	}
 
@@ -3561,6 +3655,8 @@ int cam_req_mgr_link_control(struct cam_req_mgr_link_control *control)
 	struct cam_req_mgr_link_evt_data     evt_data;
 	struct cam_req_mgr_req_queue        *in_q = NULL;
 	struct cam_req_mgr_slot             *slot = NULL;
+	struct cam_req_mgr_req_queue        *in_q = NULL;
+	struct cam_req_mgr_slot             *slot = NULL;
 
 	if (!control) {
 		CAM_ERR(CAM_CRM, "Control command is NULL");
@@ -3625,6 +3721,18 @@ int cam_req_mgr_link_control(struct cam_req_mgr_link_control *control)
 				if (dev->ops && dev->ops->process_evt)
 					dev->ops->process_evt(&evt_data);
 			}
+			in_q = link->req.in_q;
+			/* reset all slots */
+			for (j = 0; j < in_q->num_slots; j++) {
+				slot = &in_q->slot[j];
+				slot->req_id = -1;
+				slot->sync_mode =
+					CAM_REQ_MGR_SYNC_MODE_NO_SYNC;
+				slot->skip_idx = 1;
+				slot->status = CRM_SLOT_STATUS_NO_REQ;
+			}
+			in_q->wr_idx = 0;
+			in_q->rd_idx = 0;
 			in_q = link->req.in_q;
 			/* reset all slots */
 			for (j = 0; j < in_q->num_slots; j++) {

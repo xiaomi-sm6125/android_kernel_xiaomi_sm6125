@@ -1,6 +1,7 @@
 /* RxRPC key management
  *
  * Copyright (C) 2007 Red Hat, Inc. All Rights Reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  * Written by David Howells (dhowells@redhat.com)
  *
  * This program is free software; you can redistribute it and/or
@@ -35,6 +36,7 @@ static void rxrpc_free_preparse_s(struct key_preparsed_payload *);
 static void rxrpc_destroy(struct key *);
 static void rxrpc_destroy_s(struct key *);
 static void rxrpc_describe(const struct key *, struct seq_file *);
+static long rxrpc_read(const struct key *, char *, size_t);
 static long rxrpc_read(const struct key *, char *, size_t);
 
 /*
@@ -1045,10 +1047,12 @@ EXPORT_SYMBOL(rxrpc_get_null_key);
  */
 static long rxrpc_read(const struct key *key,
 		       char *buffer, size_t buflen)
+		       char *buffer, size_t buflen)
 {
 	const struct rxrpc_key_token *token;
 	const struct krb5_principal *princ;
 	size_t size;
+	__be32 *xdr, *oldxdr;
 	__be32 *xdr, *oldxdr;
 	u32 cnlen, toksize, ntoks, tok, zero;
 	u16 toksizes[AFSTOKEN_MAX];
@@ -1128,9 +1132,11 @@ static long rxrpc_read(const struct key *key,
 		return size;
 
 	xdr = (__be32 *)buffer;
+	xdr = (__be32 *)buffer;
 	zero = 0;
 #define ENCODE(x)				\
 	do {					\
+		*xdr++ = htonl(x);		\
 		*xdr++ = htonl(x);		\
 	} while(0)
 #define ENCODE_DATA(l, s)						\
@@ -1153,6 +1159,7 @@ static long rxrpc_read(const struct key *key,
 #define ENCODE64(x)					\
 	do {						\
 		__be64 y = cpu_to_be64(x);		\
+		memcpy(xdr, &y, 8);			\
 		memcpy(xdr, &y, 8);			\
 		xdr += 8 >> 2;				\
 	} while(0)

@@ -219,6 +219,7 @@ static bool fs__env_override(struct fs *fs)
 	/* name + "_PATH" + '\0' */
 	char upper_name[name_len + 5 + 1];
 
+
 	memcpy(upper_name, fs->name, name_len);
 	mem_toupper(upper_name, name_len);
 	strcpy(&upper_name[name_len], "_PATH");

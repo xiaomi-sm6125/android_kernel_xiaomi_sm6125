@@ -300,6 +300,7 @@ int cam_bps_process_cmd(void *device_priv, uint32_t cmd_type,
 	struct cam_bps_device_core_info *core_info = NULL;
 	struct cam_bps_device_hw_info *hw_info = NULL;
 	int rc = 0;
+	unsigned long flags;
 
 	if (!device_priv) {
 		CAM_ERR(CAM_ICP, "Invalid arguments");

@@ -4388,6 +4388,8 @@ kgsl_mmap_memstore(struct kgsl_device *device, struct vm_area_struct *vma)
 
 	vma->vm_flags &= ~VM_MAYWRITE;
 
+	vma->vm_flags &= ~VM_MAYWRITE;
+
 	if (memdesc->size  !=  vma_size) {
 		KGSL_MEM_ERR(device, "memstore bad size: %d should be %llu\n",
 			     vma_size, memdesc->size);
@@ -5075,6 +5077,12 @@ int kgsl_device_platform_probe(struct kgsl_device *device)
 
 	dma_set_max_seg_size(device->dev, KGSL_DMA_BIT_MASK);
 
+	/* Allocate memory for dma_parms and set the max_seg_size */
+	device->dev->dma_parms =
+		kzalloc(sizeof(*device->dev->dma_parms), GFP_KERNEL);
+
+	dma_set_max_seg_size(device->dev, KGSL_DMA_BIT_MASK);
+
 	/* Initialize the memory pools */
 	kgsl_init_page_pools(device->pdev);
 
@@ -5143,6 +5151,9 @@ EXPORT_SYMBOL(kgsl_device_platform_probe);
 void kgsl_device_platform_remove(struct kgsl_device *device)
 {
 	destroy_workqueue(device->events_wq);
+
+	kfree(device->dev->dma_parms);
+	device->dev->dma_parms = NULL;
 
 	kfree(device->dev->dma_parms);
 	device->dev->dma_parms = NULL;

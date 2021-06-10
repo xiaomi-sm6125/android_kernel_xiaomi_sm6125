@@ -489,6 +489,8 @@ void adreno_drawctxt_detach(struct kgsl_context *context)
 
 	spin_lock(&drawctxt->lock);
 
+	spin_lock(&drawctxt->lock);
+
 	spin_lock(&adreno_dev->active_list_lock);
 	list_del_init(&drawctxt->active_node);
 	spin_unlock(&adreno_dev->active_list_lock);

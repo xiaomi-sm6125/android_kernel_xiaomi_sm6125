@@ -167,6 +167,11 @@ Generic board variants:
 
 - TRINKETP-IOT
   compatible = "qcom,trinketp-iot"
+- TRINKET-IOT
+  compatible = "qcom,trinket-iot"
+
+- TRINKETP-IOT
+  compatible = "qcom,trinketp-iot"
 
 Boards (SoC type + board variant):
 

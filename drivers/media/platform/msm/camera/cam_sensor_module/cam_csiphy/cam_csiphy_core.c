@@ -902,7 +902,11 @@ int32_t cam_csiphy_core_cfg(void *phy_dev,
 		csiphy_dev->acquire_count--;
 
 		if (csiphy_dev->acquire_count == 0) {
+		if (csiphy_dev->acquire_count == 0) {
 			csiphy_dev->csiphy_state = CAM_CSIPHY_INIT;
+			/* reset config count */
+			csiphy_dev->config_count = 0;
+		}
 			/* reset config count */
 			csiphy_dev->config_count = 0;
 		}

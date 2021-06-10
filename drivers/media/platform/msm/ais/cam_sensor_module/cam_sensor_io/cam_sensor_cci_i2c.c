@@ -13,6 +13,7 @@
 #include "cam_sensor_cmn_header.h"
 #include "cam_sensor_i2c.h"
 #include "cam_cci_core.h"
+#include "cam_cci_core.h"
 
 int32_t cam_cci_i2c_read(struct cam_sensor_cci_client *cci_client,
 	uint32_t addr, uint32_t *data,
@@ -36,6 +37,8 @@ int32_t cam_cci_i2c_read(struct cam_sensor_cci_client *cci_client,
 	cci_ctrl.cfg.cci_i2c_read_cfg.data_type = data_type;
 	cci_ctrl.cfg.cci_i2c_read_cfg.data = buf;
 	cci_ctrl.cfg.cci_i2c_read_cfg.num_byte = data_type;
+
+	rc = cam_cci_core_cfg(cci_client->cci_subdev, &cci_ctrl);
 
 	rc = cam_cci_core_cfg(cci_client->cci_subdev, &cci_ctrl);
 	if (rc < 0) {
@@ -90,6 +93,8 @@ int32_t cam_camera_cci_i2c_read_seq(struct cam_sensor_cci_client *cci_client,
 	cci_ctrl.status = -EFAULT;
 
 	rc = cam_cci_core_cfg(cci_client->cci_subdev, &cci_ctrl);
+
+	rc = cam_cci_core_cfg(cci_client->cci_subdev, &cci_ctrl);
 	CAM_DBG(CAM_SENSOR, "addr = 0x%x, rc = %d", addr, rc);
 
 	if (!rc) {
@@ -98,7 +103,15 @@ int32_t cam_camera_cci_i2c_read_seq(struct cam_sensor_cci_client *cci_client,
 			CAM_DBG(CAM_SENSOR, "Byte %d: Data: 0x%x",
 				i, data[i]);
 		}
+
+	if (!rc) {
+		for (i = 0; i < num_byte; i++) {
+			data[i] = buf[i];
+			CAM_DBG(CAM_SENSOR, "Byte %d: Data: 0x%x",
+				i, data[i]);
+		}
 	}
+
 
 	kfree(buf);
 	return rc;
@@ -130,10 +143,13 @@ static int32_t cam_cci_i2c_write_table_cmd(
 	cci_ctrl.cfg.cci_i2c_write_cfg.size = write_setting->size;
 
 	rc = cam_cci_core_cfg(cci_client->cci_subdev, &cci_ctrl);
+
+	rc = cam_cci_core_cfg(cci_client->cci_subdev, &cci_ctrl);
 	if (rc < 0) {
 		CAM_ERR(CAM_SENSOR, "Failed rc = %d", rc);
 		return rc;
 	}
+
 
 	if (write_setting->delay > 20)
 		msleep(write_setting->delay);
@@ -235,9 +251,13 @@ int32_t cam_sensor_cci_i2c_util(struct cam_sensor_cci_client *cci_client,
 	cci_ctrl.cci_info = cci_client;
 
 	rc = cam_cci_core_cfg(cci_client->cci_subdev, &cci_ctrl);
+
+	rc = cam_cci_core_cfg(cci_client->cci_subdev, &cci_ctrl);
 	if (rc < 0) {
 		CAM_ERR(CAM_SENSOR, "Failed rc = %d", rc);
 	}
+
+	return rc;
 
 	return rc;
 }

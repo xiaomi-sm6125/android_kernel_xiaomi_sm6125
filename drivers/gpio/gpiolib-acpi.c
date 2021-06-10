@@ -2,6 +2,7 @@
  * ACPI helpers for GPIO API
  *
  * Copyright (C) 2012, Intel Corporation
+ * Copyright (C) 2021 XiaoMi, Inc.
  * Authors: Mathias Nyman <mathias.nyman@linux.intel.com>
  *          Mika Westerberg <mika.westerberg@linux.intel.com>
  *
@@ -29,6 +30,16 @@ module_param(run_edge_events_on_boot, int, 0444);
 MODULE_PARM_DESC(run_edge_events_on_boot,
 		 "Run edge _AEI event-handlers at boot: 0=no, 1=yes, -1=auto");
 
+static char *ignore_wake;
+module_param(ignore_wake, charp, 0444);
+MODULE_PARM_DESC(ignore_wake,
+		 "controller@pin combos on which to ignore the ACPI wake flag "
+		 "ignore_wake=controller@pin[,controller@pin[,...]]");
+
+struct acpi_gpiolib_dmi_quirk {
+	bool no_edge_events_on_boot;
+	char *ignore_wake;
+};
 static char *ignore_wake;
 module_param(ignore_wake, charp, 0444);
 MODULE_PARM_DESC(ignore_wake,
@@ -316,6 +327,57 @@ static bool acpi_gpio_irq_is_wake(struct device *parent,
 	return true;
 }
 
+static bool acpi_gpio_in_ignore_list(const char *controller_in, int pin_in)
+{
+	const char *controller, *pin_str;
+	int len, pin;
+	char *endp;
+
+	controller = ignore_wake;
+	while (controller) {
+		pin_str = strchr(controller, '@');
+		if (!pin_str)
+			goto err;
+
+		len = pin_str - controller;
+		if (len == strlen(controller_in) &&
+		    strncmp(controller, controller_in, len) == 0) {
+			pin = simple_strtoul(pin_str + 1, &endp, 10);
+			if (*endp != 0 && *endp != ',')
+				goto err;
+
+			if (pin == pin_in)
+				return true;
+		}
+
+		controller = strchr(controller, ',');
+		if (controller)
+			controller++;
+	}
+
+	return false;
+err:
+	pr_err_once("Error invalid value for gpiolib_acpi.ignore_wake: %s\n",
+		    ignore_wake);
+	return false;
+}
+
+static bool acpi_gpio_irq_is_wake(struct device *parent,
+				  struct acpi_resource_gpio *agpio)
+{
+	int pin = agpio->pin_table[0];
+
+	if (agpio->wake_capable != ACPI_WAKE_CAPABLE)
+		return false;
+
+	if (acpi_gpio_in_ignore_list(dev_name(parent), pin)) {
+		dev_info(parent, "Ignoring wakeup on pin %d\n", pin);
+		return false;
+	}
+
+	return true;
+}
+
 static acpi_status acpi_gpiochip_alloc_event(struct acpi_resource *ares,
 					     void *context)
 {
@@ -401,6 +463,7 @@ static acpi_status acpi_gpiochip_alloc_event(struct acpi_resource *ares,
 	event->handle = evt_handle;
 	event->handler = handler;
 	event->irq = irq;
+	event->irq_is_wake = acpi_gpio_irq_is_wake(chip->parent, agpio);
 	event->irq_is_wake = acpi_gpio_irq_is_wake(chip->parent, agpio);
 	event->pin = pin;
 	event->desc = desc;
@@ -1395,6 +1458,9 @@ static const struct dmi_system_id gpiolib_acpi_quirks[] = {
 		.driver_data = &(struct acpi_gpiolib_dmi_quirk) {
 			.no_edge_events_on_boot = true,
 		},
+		.driver_data = &(struct acpi_gpiolib_dmi_quirk) {
+			.no_edge_events_on_boot = true,
+		},
 	},
 	{
 		/*
@@ -1406,6 +1472,9 @@ static const struct dmi_system_id gpiolib_acpi_quirks[] = {
 		.matches = {
 			DMI_MATCH(DMI_SYS_VENDOR, "Wortmann_AG"),
 			DMI_MATCH(DMI_PRODUCT_NAME, "TERRA_PAD_1061"),
+		},
+		.driver_data = &(struct acpi_gpiolib_dmi_quirk) {
+			.no_edge_events_on_boot = true,
 		},
 		.driver_data = &(struct acpi_gpiolib_dmi_quirk) {
 			.no_edge_events_on_boot = true,
@@ -1496,19 +1565,24 @@ static const struct dmi_system_id gpiolib_acpi_quirks[] = {
 static int acpi_gpio_setup_params(void)
 {
 	const struct acpi_gpiolib_dmi_quirk *quirk = NULL;
+	const struct acpi_gpiolib_dmi_quirk *quirk = NULL;
 	const struct dmi_system_id *id;
 
 	id = dmi_first_match(gpiolib_acpi_quirks);
 	if (id)
 		quirk = id->driver_data;
+		quirk = id->driver_data;
 
 	if (run_edge_events_on_boot < 0) {
+		if (quirk && quirk->no_edge_events_on_boot)
 		if (quirk && quirk->no_edge_events_on_boot)
 			run_edge_events_on_boot = 0;
 		else
 			run_edge_events_on_boot = 1;
 	}
 
+	if (ignore_wake == NULL && quirk && quirk->ignore_wake)
+		ignore_wake = quirk->ignore_wake;
 	if (ignore_wake == NULL && quirk && quirk->ignore_wake)
 		ignore_wake = quirk->ignore_wake;
 

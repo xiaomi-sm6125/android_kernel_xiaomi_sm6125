@@ -1295,6 +1295,10 @@ void msm_vfe47_cfg_fetch_engine(struct vfe_device *vfe_dev,
 		case V4L2_PIX_FMT_P16GBRG12:
 		case V4L2_PIX_FMT_P16GRBG12:
 		case V4L2_PIX_FMT_P16RGGB12:
+		case V4L2_PIX_FMT_P16BGGR12:
+		case V4L2_PIX_FMT_P16GBRG12:
+		case V4L2_PIX_FMT_P16GRBG12:
+		case V4L2_PIX_FMT_P16RGGB12:
 			main_unpack_pattern = 0xB210;
 			break;
 		default:

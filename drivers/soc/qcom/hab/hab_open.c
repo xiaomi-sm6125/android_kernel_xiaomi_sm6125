@@ -242,6 +242,8 @@ int hab_open_receive_cancel(struct physical_channel *pchan,
 		request->xdata.open_id  = data.open_id;
 		request->xdata.ver_fe  = data.ver_fe;
 		request->xdata.ver_be  = data.ver_be;
+		request->xdata.ver_fe  = data.ver_fe;
+		request->xdata.ver_be  = data.ver_be;
 
 		do_gettimeofday(&tv);
 		node->age = tv.tv_sec + HAB_OPEN_REQ_EXPIRE_TIME_S +

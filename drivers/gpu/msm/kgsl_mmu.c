@@ -721,6 +721,7 @@ static int nommu_init(struct kgsl_mmu *mmu)
 {
 	mmu->features |= KGSL_MMU_GLOBAL_PAGETABLE;
 	set_bit(KGSL_MMU_STARTED, &mmu->flags);
+	set_bit(KGSL_MMU_STARTED, &mmu->flags);
 	return 0;
 }
 

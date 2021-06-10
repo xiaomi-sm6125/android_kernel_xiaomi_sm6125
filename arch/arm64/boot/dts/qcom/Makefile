@@ -122,6 +122,8 @@ dtb-$(CONFIG_ARCH_QCS405) += qcs405-iot-sku1.dtb \
 		sa2150p-ccard-nand.dtb \
 		sa2150p-ccard-emmc-eth-sw.dtb \
 		sa2150p-ccard-emmc-eth-phy.dtb \
+		sa2150p-ccard-emmc-eth-sw.dtb \
+		sa2150p-ccard-emmc-eth-phy.dtb \
 		qcs405-iot-sku13.dtb \
 		qcs407-iot-sku13.dtb \
 		qcs405-iot-robot-reference-board.dtb \
@@ -217,6 +219,7 @@ dtb-$(CONFIG_QTI_GVM) += sa8155-vm-la.dtb \
 	sa8195-vm-la-mt.dtb \
 	sa8195-vm-lv.dtb \
 	sa8195-vm-lv-lxc.dtb \
+	sa8195-vm-lv-lxc.dtb \
 	sa8195-vm-lv-mt.dtb
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
@@ -233,6 +236,8 @@ dtb-$(CONFIG_ARCH_SDMSHRIKE)	+= sdmshrike-rumi.dtb \
 	sdmshrike-mtp.dtb \
 	sdmshrike-cdp.dtb \
 	sdmshrike-v2-mtp.dtb \
+	sa8195p-adp-star.dtb \
+	sa8195p-v2-adp-air-capture.dtb
 	sa8195p-adp-star.dtb \
 	sa8195p-v2-adp-air-capture.dtb
 endif
@@ -406,6 +411,16 @@ dtb-$(CONFIG_ARCH_TRINKET)	+= trinket-rumi.dtb \
 	trinketp-iot-usbc-idp.dtb \
 	trinket-iot-dp-idp.dtb \
 	trinketp-iot-dp-idp.dtb
+	trinket-iot-idp.dtb \
+	trinketp-iot-idp.dtb \
+	trinket-iot-external-codec-idp.dtb \
+	trinketp-iot-external-codec-idp.dtb \
+	trinket-iot-usbc-external-codec-idp.dtb \
+	trinketp-iot-usbc-external-codec-idp.dtb \
+	trinket-iot-usbc-idp.dtb \
+	trinketp-iot-usbc-idp.dtb \
+	trinket-iot-dp-idp.dtb \
+	trinketp-iot-dp-idp.dtb
 endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
@@ -474,6 +489,7 @@ dtb-$(CONFIG_ARCH_SDXPRAIRIE) += sdxprairie-rumi.dtb \
 	sdxprairie-v2-mtp-v1.1.dtb \
 	sdxprairie-v2-mtp-le-cpe.dtb \
 	sdxprairie-v2-mtp-au-dsda.dtb \
+	sdxprairie-v2-mtp-au-dsda.dtb \
 	sa515m-v2-ttp.dtb \
 	sa515m-v2-ttp-usb-ep.dtb \
 	sa515m-v2-ttp-pcie-ep.dtb \
@@ -489,6 +505,8 @@ dtb-$(CONFIG_ARCH_SDXPRAIRIE) += sdxprairie-rumi.dtb \
 	sa515m-v2-ccard.dtb \
 	sa515m-v2-ccard-pcie-ep.dtb \
 	sa515m-v2-ccard-usb-ep.dtb \
+	sa515m-v2-ccard-eth-ep.dtb \
+	sa515m-v2-ccard-eth-phy-ep.dtb
 	sa515m-v2-ccard-eth-ep.dtb \
 	sa515m-v2-ccard-eth-phy-ep.dtb
 

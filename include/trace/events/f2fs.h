@@ -145,6 +145,7 @@ TRACE_DEFINE_ENUM(CP_RESIZE);
 		{ CP_NO_NEEDED,		"no needed" },			\
 		{ CP_NON_REGULAR,	"non regular" },		\
 		{ CP_COMPRESSED,	"compressed" },			\
+		{ CP_COMPRESSED,	"compressed" },			\
 		{ CP_HARDLINK,		"hardlink" },			\
 		{ CP_SB_NEED_CP,	"sb needs cp" },		\
 		{ CP_WRONG_PINO,	"wrong pino" },			\
@@ -161,6 +162,12 @@ TRACE_DEFINE_ENUM(CP_RESIZE);
 		{ F2FS_GOING_DOWN_NOSYNC,	"no sync" },		\
 		{ F2FS_GOING_DOWN_METAFLUSH,	"meta flush" },		\
 		{ F2FS_GOING_DOWN_NEED_FSCK,	"need fsck" })
+
+#define show_compress_algorithm(type)					\
+	__print_symbolic(type,						\
+		{ COMPRESS_LZO,		"LZO" },			\
+		{ COMPRESS_LZ4,		"LZ4" },			\
+		{ COMPRESS_ZSTD,	"ZSTD" })
 
 #define show_compress_algorithm(type)					\
 	__print_symbolic(type,						\

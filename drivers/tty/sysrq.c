@@ -53,6 +53,7 @@
 
 #include <asm/ptrace.h>
 #include <asm/irq_regs.h>
+#include <wt_sys/wt_boot_reason.h>
 
 /* Whether we react on sysrq keys or just ignore them */
 static int __read_mostly sysrq_enabled = CONFIG_MAGIC_SYSRQ_DEFAULT_ENABLE;

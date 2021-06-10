@@ -1580,6 +1580,7 @@ hw_dump:
 		cur_time.tv_sec,
 		cur_time.tv_usec);
 	memset(&fd_dump_args, 0, sizeof(fd_dump_args));
+	memset(&fd_dump_args, 0, sizeof(fd_dump_args));
 	rc  = cam_mem_get_cpu_buf(dump_args->buf_handle,
 		&fd_dump_args.cpu_addr, &fd_dump_args.buf_len);
 	if (!fd_dump_args.cpu_addr || !fd_dump_args.buf_len || rc) {
