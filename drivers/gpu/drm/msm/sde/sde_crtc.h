@@ -426,6 +426,7 @@ struct sde_crtc_state {
 	struct sde_hw_dim_layer *fod_dim_layer;
 	struct sde_hw_dim_layer *global_dim_layer;
 	enum msm_dim_layer_type global_dim_layer_type;
+	u32 global_dim_layer_alpha;
 #endif
 	uint32_t num_ds;
 	uint32_t num_ds_enabled;
