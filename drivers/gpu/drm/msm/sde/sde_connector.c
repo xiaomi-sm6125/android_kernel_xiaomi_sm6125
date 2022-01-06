@@ -637,6 +637,7 @@ int sde_connector_pre_kickoff(struct drm_connector *connector)
 	params.hdr_meta = &c_state->hdr_meta;
 #ifdef CONFIG_MACH_XIAOMI_F9S
 	params.dim_layer_type = crtc_state->global_dim_layer_type;
+	params.dim_layer_alpha = crtc_state->global_dim_layer_alpha;
 #endif
 
 	SDE_EVT32_VERBOSE(connector->base.id);

@@ -569,6 +569,7 @@ struct msm_display_kickoff_params {
 	struct drm_msm_ext_hdr_metadata *hdr_meta;
 #ifdef CONFIG_MACH_XIAOMI_F9S
 	enum msm_dim_layer_type dim_layer_type;
+	u32 dim_layer_alpha;
 #endif
 };
 
