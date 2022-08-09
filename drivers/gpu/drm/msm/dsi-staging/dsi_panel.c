@@ -721,6 +721,7 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 	}
 #endif
 
+	panel->hw_bl_lvl = bl_lvl;
 	dsi = &panel->mipi_device;
 
 #ifdef CONFIG_MACH_XIAOMI_F9S
