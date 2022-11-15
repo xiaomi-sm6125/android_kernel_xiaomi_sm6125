@@ -2087,11 +2087,12 @@ static void uclamp_set(struct kernfs_open_file *of,
 	const char *cs_name = cs->css.cgroup->kn->name;
 
 	static struct ucl_param tgts[] = {
-		{"top-app",    	     	"10", "100", 1, 1},
-		{"foreground", 	     	"0",  "50",  0, 0},
-		{"background", 	     	"20", "100", 0, 0},
-		{"system-background", 	"0",  "40",  0, 0},
-		{"camera-daemon",	"50", "100", 1, 1},
+	    {"top-app",           "10", "100", 0, 1},
+	    {"foreground",        "20", "80",  0, 0},
+	    {"background",        "20", "100", 0, 0},
+	    {"system-background", "0",  "40",  0, 0},
+	    {"restricted",        "0",  "40",  0, 0},
+	    {"camera-daemon",     "50", "100", 1, 0},
 	};
 
 	for (i = 0; i < ARRAY_SIZE(tgts); i++) {
@@ -2105,7 +2106,7 @@ static void uclamp_set(struct kernfs_open_file *of,
 			cpu_uclamp_ls_write_u64_wrapper(&cs->css, NULL,
 						tgt.uclamp_latency_sensitive);
 			cpu_uclamp_boost_write_u64_wrapper(&cs->css, NULL,
-						tgt.uclamp_boosted);
+ 						tgt.uclamp_boosted);
 			break;
 		}
 	}
