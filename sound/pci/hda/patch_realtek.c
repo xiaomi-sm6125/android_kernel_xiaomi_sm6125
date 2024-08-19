@@ -4,6 +4,7 @@
  * HD audio interface patch for Realtek ALC codecs
  *
  * Copyright (c) 2004 Kailang Yang <kailang@realtek.com.tw>
+ * Copyright (C) 2021 XiaoMi, Inc.
  *                    PeiSen Hou <pshou@realtek.com.tw>
  *                    Takashi Iwai <tiwai@suse.de>
  *                    Jonathan Woithe <jwoithe@just42.net>
@@ -4825,6 +4826,8 @@ static void alc_determine_headset_type(struct hda_codec *codec)
 		is_ctia = (val & 0x1c02) == 0x1c02;
 		break;
 	case 0x10ec0225:
+		codec->power_save_node = 1;
+		/* fall through */
 	case 0x10ec0295:
 	case 0x10ec0299:
 		alc_process_coef_fw(codec, alc225_pre_hsmode);

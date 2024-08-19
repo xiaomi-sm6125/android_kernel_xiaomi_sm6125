@@ -2,6 +2,7 @@
  * soc-pcm.c  --  ALSA SoC PCM
  *
  * Copyright 2005 Wolfson Microelectronics PLC.
+ * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright 2005 Openedhand Ltd.
  * Copyright (C) 2010 Slimlogic Ltd.
  * Copyright (C) 2010 Texas Instruments Inc.
@@ -2244,6 +2245,8 @@ int dpcm_be_dai_trigger(struct snd_soc_pcm_runtime *fe, int stream,
 			if ((be->dpcm[stream].state != SND_SOC_DPCM_STATE_PREPARE) &&
 			    (be->dpcm[stream].state != SND_SOC_DPCM_STATE_STOP) &&
 			    (be->dpcm[stream].state != SND_SOC_DPCM_STATE_PAUSED))
+			    (be->dpcm[stream].state != SND_SOC_DPCM_STATE_STOP) &&
+			    (be->dpcm[stream].state != SND_SOC_DPCM_STATE_PAUSED))
 				continue;
 
 			ret = dpcm_do_trigger(dpcm, be_substream, cmd);
@@ -2273,6 +2276,8 @@ int dpcm_be_dai_trigger(struct snd_soc_pcm_runtime *fe, int stream,
 			be->dpcm[stream].state = SND_SOC_DPCM_STATE_START;
 			break;
 		case SNDRV_PCM_TRIGGER_STOP:
+			if ((be->dpcm[stream].state != SND_SOC_DPCM_STATE_START) &&
+			    (be->dpcm[stream].state != SND_SOC_DPCM_STATE_PAUSED))
 			if ((be->dpcm[stream].state != SND_SOC_DPCM_STATE_START) &&
 			    (be->dpcm[stream].state != SND_SOC_DPCM_STATE_PAUSED))
 				continue;
@@ -2321,20 +2326,30 @@ EXPORT_SYMBOL_GPL(dpcm_be_dai_trigger);
 
 static int dpcm_dai_trigger_fe_be(struct snd_pcm_substream *substream,
 				  int cmd, bool fe_first)
+static int dpcm_dai_trigger_fe_be(struct snd_pcm_substream *substream,
+				  int cmd, bool fe_first)
 {
 	struct snd_soc_pcm_runtime *fe = substream->private_data;
+	int ret;
 	int ret;
 
 	/* call trigger on the frontend before the backend. */
 	if (fe_first) {
+	/* call trigger on the frontend before the backend. */
+	if (fe_first) {
 		dev_dbg(fe->dev, "ASoC: pre trigger FE %s cmd %d\n",
+			fe->dai_link->name, cmd);
 			fe->dai_link->name, cmd);
 
 		ret = soc_pcm_trigger(substream, cmd);
 		if (ret < 0)
 			return ret;
+		if (ret < 0)
+			return ret;
 
 		ret = dpcm_be_dai_trigger(fe, substream->stream, cmd);
+		return ret;
+	}
 		return ret;
 	}
 
@@ -2342,7 +2357,13 @@ static int dpcm_dai_trigger_fe_be(struct snd_pcm_substream *substream,
 	ret = dpcm_be_dai_trigger(fe, substream->stream, cmd);
 	if (ret < 0)
 		return ret;
+	/* call trigger on the frontend after the backend. */
+	ret = dpcm_be_dai_trigger(fe, substream->stream, cmd);
+	if (ret < 0)
+		return ret;
 
+	dev_dbg(fe->dev, "ASoC: post trigger FE %s cmd %d\n",
+		fe->dai_link->name, cmd);
 	dev_dbg(fe->dev, "ASoC: post trigger FE %s cmd %d\n",
 		fe->dai_link->name, cmd);
 
@@ -2409,6 +2430,12 @@ static int dpcm_fe_dai_do_trigger(struct snd_pcm_substream *substream, int cmd)
 		dev_err(fe->dev, "ASoC: invalid trigger cmd %d for %s\n", cmd,
 				fe->dai_link->name);
 		ret = -EINVAL;
+		goto out;
+	}
+
+	if (ret < 0) {
+		dev_err(fe->dev, "ASoC: trigger FE cmd: %d failed: %d\n",
+			cmd, ret);
 		goto out;
 	}
 
@@ -3332,14 +3359,17 @@ static ssize_t dpcm_show_state(struct snd_soc_pcm_runtime *fe,
 
 	/* FE state */
 	offset += scnprintf(buf + offset, size - offset,
+	offset += scnprintf(buf + offset, size - offset,
 			"[%s - %s]\n", fe->dai_link->name,
 			stream ? "Capture" : "Playback");
 
+	offset += scnprintf(buf + offset, size - offset, "State: %s\n",
 	offset += scnprintf(buf + offset, size - offset, "State: %s\n",
 	                dpcm_state_string(fe->dpcm[stream].state));
 
 	if ((fe->dpcm[stream].state >= SND_SOC_DPCM_STATE_HW_PARAMS) &&
 	    (fe->dpcm[stream].state <= SND_SOC_DPCM_STATE_STOP))
+		offset += scnprintf(buf + offset, size - offset,
 		offset += scnprintf(buf + offset, size - offset,
 				"Hardware Params: "
 				"Format = %s, Channels = %d, Rate = %d\n",
@@ -3349,8 +3379,10 @@ static ssize_t dpcm_show_state(struct snd_soc_pcm_runtime *fe,
 
 	/* BEs state */
 	offset += scnprintf(buf + offset, size - offset, "Backends:\n");
+	offset += scnprintf(buf + offset, size - offset, "Backends:\n");
 
 	if (list_empty(&fe->dpcm[stream].be_clients)) {
+		offset += scnprintf(buf + offset, size - offset,
 		offset += scnprintf(buf + offset, size - offset,
 				" No active DSP links\n");
 		goto out;
@@ -3361,14 +3393,17 @@ static ssize_t dpcm_show_state(struct snd_soc_pcm_runtime *fe,
 		params = &dpcm->hw_params;
 
 		offset += scnprintf(buf + offset, size - offset,
+		offset += scnprintf(buf + offset, size - offset,
 				"- %s\n", be->dai_link->name);
 
+		offset += scnprintf(buf + offset, size - offset,
 		offset += scnprintf(buf + offset, size - offset,
 				"   State: %s\n",
 				dpcm_state_string(be->dpcm[stream].state));
 
 		if ((be->dpcm[stream].state >= SND_SOC_DPCM_STATE_HW_PARAMS) &&
 		    (be->dpcm[stream].state <= SND_SOC_DPCM_STATE_STOP))
+			offset += scnprintf(buf + offset, size - offset,
 			offset += scnprintf(buf + offset, size - offset,
 				"   Hardware Params: "
 				"Format = %s, Channels = %d, Rate = %d\n",
