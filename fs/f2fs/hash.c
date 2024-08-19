@@ -3,6 +3,7 @@
  * fs/f2fs/hash.c
  *
  * Copyright (c) 2012 Samsung Electronics Co., Ltd.
+ * Copyright (C) 2021 XiaoMi, Inc.
  *             http://www.samsung.com/
  *
  * Portions of this code from linux/fs/ext3/hash.c
@@ -71,6 +72,11 @@ static void str2hashbuf(const unsigned char *msg, size_t len,
 static u32 TEA_hash_name(const u8 *p, size_t len)
 {
 	__u32 in[8], buf[4];
+
+	if (IS_CASEFOLDED(dir) && IS_ENCRYPTED(dir)) {
+		f2fs_hash = cpu_to_le32(fscrypt_fname_siphash(dir, name_info));
+		return f2fs_hash;
+	}
 
 	/* Initialize the default seed for the hash checksum functions */
 	buf[0] = 0x67452301;

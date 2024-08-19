@@ -3,6 +3,7 @@
  * fs/f2fs/gc.c
  *
  * Copyright (c) 2012 Samsung Electronics Co., Ltd.
+ * Copyright (C) 2021 XiaoMi, Inc.
  *             http://www.samsung.com/
  */
 #include <linux/fs.h>
@@ -32,6 +33,8 @@ static int gc_thread_func(void *data)
 
 	set_freezable();
 	do {
+		bool sync_mode;
+
 		bool sync_mode;
 
 		wait_event_interruptible_timeout(*wq,
@@ -82,9 +85,11 @@ static int gc_thread_func(void *data)
 		if (sbi->gc_mode == GC_URGENT) {
 			wait_ms = gc_th->urgent_sleep_time;
 			down_write(&sbi->gc_lock);
+			down_write(&sbi->gc_lock);
 			goto do_gc;
 		}
 
+		if (!down_write_trylock(&sbi->gc_lock)) {
 		if (!down_write_trylock(&sbi->gc_lock)) {
 			stat_other_skip_bggc_count(sbi);
 			goto next;
@@ -92,6 +97,7 @@ static int gc_thread_func(void *data)
 
 		if (!is_idle(sbi, GC_TIME)) {
 			increase_sleep_time(gc_th, &wait_ms);
+			up_write(&sbi->gc_lock);
 			up_write(&sbi->gc_lock);
 			stat_io_skip_bggc_count(sbi);
 			goto next;
@@ -105,8 +111,12 @@ do_gc:
 		stat_inc_bggc_count(sbi->stat_info);
 
 		sync_mode = F2FS_OPTION(sbi).bggc_mode == BGGC_MODE_SYNC;
+		stat_inc_bggc_count(sbi->stat_info);
+
+		sync_mode = F2FS_OPTION(sbi).bggc_mode == BGGC_MODE_SYNC;
 
 		/* if return value is not zero, no victim was selected */
+		if (f2fs_gc(sbi, sync_mode, true, NULL_SEGNO))
 		if (f2fs_gc(sbi, sync_mode, true, NULL_SEGNO))
 			wait_ms = gc_th->no_gc_sleep_time;
 
@@ -114,6 +124,7 @@ do_gc:
 				prefree_segments(sbi), free_segments(sbi));
 
 		/* balancing f2fs's metadata periodically */
+		f2fs_balance_fs_bg(sbi, true);
 		f2fs_balance_fs_bg(sbi, true);
 next:
 		sb_end_write(sbi->sb);
@@ -197,6 +208,10 @@ static void select_policy(struct f2fs_sb_info *sbi, int gc_type,
 		p->ofs_unit = sbi->segs_per_sec;
 	}
 
+	/*
+	 * adjust candidates range, should select all dirty segments for
+	 * foreground GC and urgent GC cases.
+	 */
 	/*
 	 * adjust candidates range, should select all dirty segments for
 	 * foreground GC and urgent GC cases.
@@ -643,6 +658,7 @@ static bool is_alive(struct f2fs_sb_info *sbi, struct f2fs_summary *sum,
 
 	*nofs = ofs_of_node(node_page);
 	source_blkaddr = data_blkaddr(NULL, node_page, ofs_in_node);
+	source_blkaddr = data_blkaddr(NULL, node_page, ofs_in_node);
 	f2fs_put_page(node_page, 1);
 
 	if (source_blkaddr != blkaddr) {
@@ -774,6 +790,7 @@ static int move_data_block(struct inode *inode, block_t bidx,
 	struct page *page, *mpage;
 	block_t newaddr;
 	int err = 0;
+	bool lfs_mode = f2fs_lfs_mode(fio.sbi);
 	bool lfs_mode = f2fs_lfs_mode(fio.sbi);
 
 	/* do not read out */
@@ -989,6 +1006,8 @@ retry:
 			if (err == -ENOMEM) {
 				congestion_wait(BLK_RW_ASYNC,
 						DEFAULT_IO_TIMEOUT);
+				congestion_wait(BLK_RW_ASYNC,
+						DEFAULT_IO_TIMEOUT);
 				goto retry;
 			}
 			if (is_dirty)
@@ -1038,6 +1057,8 @@ next_step:
 		if ((gc_type == BG_GC && has_not_enough_free_secs(sbi, 0, 0)) ||
 				get_valid_blocks(sbi, segno, true) ==
 							BLKS_PER_SEC(sbi))
+				get_valid_blocks(sbi, segno, true) ==
+							BLKS_PER_SEC(sbi))
 			return submitted;
 
 		if (check_valid_map(sbi, segno, off) == 0)
@@ -1071,6 +1092,7 @@ next_step:
 					special_file(inode->i_mode)) {
 				set_sbi_flag(sbi, SBI_NEED_FSCK);
 				continue;
+			}
 			}
 
 			if (!down_write_trylock(
@@ -1223,6 +1245,7 @@ static int do_garbage_collect(struct f2fs_sb_info *sbi,
 		if (get_valid_blocks(sbi, segno, false) == 0)
 			goto freed;
 		if (gc_type == BG_GC && __is_large_section(sbi) &&
+		if (gc_type == BG_GC && __is_large_section(sbi) &&
 				migrated >= sbi->migration_granularity)
 			goto skip;
 		if (!PageUptodate(sum_page) || unlikely(f2fs_cp_error(sbi)))
@@ -1252,6 +1275,7 @@ static int do_garbage_collect(struct f2fs_sb_info *sbi,
 							segno, gc_type);
 
 		stat_inc_seg_count(sbi, type, gc_type);
+		migrated++;
 		migrated++;
 
 freed:
@@ -1390,6 +1414,7 @@ stop:
 				prefree_segments(sbi));
 
 	up_write(&sbi->gc_lock);
+	up_write(&sbi->gc_lock);
 
 	put_gc_inode(&gc_list);
 
@@ -1482,7 +1507,18 @@ static void update_sb_metadata(struct f2fs_sb_info *sbi, int secs)
 	int segment_count;
 	int segment_count_main;
 	long long block_count;
+	int section_count;
+	int segment_count;
+	int segment_count_main;
+	long long block_count;
 	int segs = secs * sbi->segs_per_sec;
+
+	down_write(&sbi->sb_lock);
+
+	section_count = le32_to_cpu(raw_sb->section_count);
+	segment_count = le32_to_cpu(raw_sb->segment_count);
+	segment_count_main = le32_to_cpu(raw_sb->segment_count_main);
+	block_count = le64_to_cpu(raw_sb->block_count);
 
 	down_write(&sbi->sb_lock);
 
@@ -1504,6 +1540,8 @@ static void update_sb_metadata(struct f2fs_sb_info *sbi, int secs)
 		raw_sb->devs[last_dev].total_segments =
 						cpu_to_le32(dev_segs + segs);
 	}
+
+	up_write(&sbi->sb_lock);
 
 	up_write(&sbi->sb_lock);
 }
@@ -1619,13 +1657,16 @@ int f2fs_resize_fs(struct f2fs_sb_info *sbi, __u64 block_count)
 		goto recover_out;
 	}
 
+	mutex_lock(&sbi->cp_mutex);
 	update_fs_metadata(sbi, -secs);
 	clear_sbi_flag(sbi, SBI_IS_RESIZEFS);
 	set_sbi_flag(sbi, SBI_IS_DIRTY);
 
 	err = f2fs_write_checkpoint(sbi, &cpc);
 	if (err) {
+		mutex_lock(&sbi->cp_mutex);
 		update_fs_metadata(sbi, secs);
+		mutex_unlock(&sbi->cp_mutex);
 		update_sb_metadata(sbi, secs);
 		f2fs_commit_super(sbi, false);
 	}
