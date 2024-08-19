@@ -20,6 +20,8 @@
 / {
 	model = "Qualcomm Technologies, Inc. TRINKETP IOT IDP Overlay";
 	compatible = "qcom,trinketp-iot";
+	model = "Qualcomm Technologies, Inc. TRINKETP IOT IDP Overlay";
+	compatible = "qcom,trinketp-iot";
 	qcom,msm-id = <468 0x10000>;
 	qcom,board-id = <34 0>;
 };

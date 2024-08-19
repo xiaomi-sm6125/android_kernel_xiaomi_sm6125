@@ -2220,6 +2220,7 @@
 		coresight-name = "coresight-cti-gpu_isdb_cti";
 
 		status = "disabled";
+		status = "disabled";
 		clocks = <&clock_rpmcc RPM_SMD_QDSS_CLK>,
 			<&clock_gpucc GPU_CC_CX_APB_CLK>;
 		clock-names = "apb_pclk", "gpu_apb_clk";

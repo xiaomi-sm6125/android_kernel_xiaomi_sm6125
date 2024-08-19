@@ -2,6 +2,7 @@
  * Based on arch/arm/kernel/setup.c
  *
  * Copyright (C) 1995-2001 Russell King
+ * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright (C) 2012 ARM Ltd.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -44,6 +45,7 @@
 #include <linux/sched/task.h>
 #include <linux/mm.h>
 #include <linux/libfdt.h>
+#include <linux/libfdt.h>
 
 #include <asm/acpi.h>
 #include <asm/fixmap.h>
@@ -65,6 +67,15 @@
 #include <asm/xen/hypervisor.h>
 #include <asm/mmu_context.h>
 #include <asm/system_misc.h>
+#include <asm/bootinfo.h>
+
+#ifdef CONFIG_OF_FLATTREE
+void __init early_init_dt_setup_pureason_arch(unsigned long pu_reason)
+{
+	set_powerup_reason(pu_reason);
+	pr_info("Powerup reason=0x%x\n", get_powerup_reason());
+}
+#endif
 
 phys_addr_t __fdt_pointer __initdata;
 
@@ -185,6 +196,9 @@ void __init smp_setup_processor_id(void)
 	logical_bootcpu_id = parse_logical_bootcpu(__fdt_pointer);
 
 	cpu_logical_map(logical_bootcpu_id) = mpidr;
+	logical_bootcpu_id = parse_logical_bootcpu(__fdt_pointer);
+
+	cpu_logical_map(logical_bootcpu_id) = mpidr;
 
 	/*
 	 * clear __my_cpu_offset on boot CPU to avoid hang caused by
@@ -193,6 +207,8 @@ void __init smp_setup_processor_id(void)
 	 */
 	set_my_cpu_offset(0);
 	pr_info("Booting Linux on physical CPU 0x%lx\n", (unsigned long)mpidr);
+
+	fix_smp_processor_id();
 
 	fix_smp_processor_id();
 }

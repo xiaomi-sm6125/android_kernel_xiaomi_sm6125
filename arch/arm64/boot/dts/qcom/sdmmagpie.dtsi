@@ -2123,6 +2123,8 @@
 		compatible = "qcom,sdhci-msm-v5";
 		reg = <0x7c4000 0x1000>, <0x7c5000 0x1000>, <0x7C8000 0x8000>;
 		reg-names = "hc_mem", "cmdq_mem", "cmdq_ice";
+		reg = <0x7c4000 0x1000>, <0x7c5000 0x1000>, <0x7C8000 0x8000>;
+		reg-names = "hc_mem", "cmdq_mem", "cmdq_ice";
 
 		interrupts = <IRQ_TYPE_NONE 641 IRQ_TYPE_NONE>,
 					<IRQ_TYPE_NONE 644 IRQ_TYPE_NONE>;
@@ -2338,6 +2340,8 @@
 
 	ufshc_mem: ufshc@1d84000 {
 		compatible = "qcom,ufshc";
+		reg = <0x1d84000 0x3000>, <0x1d90000 0x8000>;
+		reg-names = "ufs_mem", "ufs_ice";
 		reg = <0x1d84000 0x3000>, <0x1d90000 0x8000>;
 		reg-names = "ufs_mem", "ufs_ice";
 		interrupts = <0 265 0>;
@@ -2631,7 +2635,15 @@
 		qcom,signal-aop;
 		qcom,minidump-id = <3>;
 		qcom,aux-minidump-ids = <4>;
+		qcom,aux-minidump-ids = <4>;
 		qcom,complete-ramdump;
+
+		qcom,msm-bus,name = "pil-modem";
+		qcom,msm-bus,num-cases = <2>;
+		qcom,msm-bus,num-paths = <1>;
+		qcom,msm-bus,vectors-KBps =
+			<129 512 0 0>,
+			<129 512 0 7000000>;
 
 		qcom,msm-bus,name = "pil-modem";
 		qcom,msm-bus,num-cases = <2>;
