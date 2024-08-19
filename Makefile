@@ -912,6 +912,7 @@ KBUILD_LDFLAGS += $(LD_FLAGS_LTO_CLANG)
 KBUILD_LDFLAGS_MODULE += $(LD_FLAGS_LTO_CLANG)
 
 KBUILD_LDFLAGS_MODULE += -T scripts/module-lto.lds
+KBUILD_LDFLAGS_MODULE += -T scripts/module-lto.lds
 
 # allow disabling only clang LTO where needed
 DISABLE_LTO_CLANG := -fno-lto
@@ -921,8 +922,11 @@ endif
 ifdef CONFIG_LTO
 LTO_CFLAGS	:= $(lto-clang-flags)
 KBUILD_CFLAGS	+= $(LTO_CFLAGS)
+LTO_CFLAGS	:= $(lto-clang-flags)
+KBUILD_CFLAGS	+= $(LTO_CFLAGS)
 
 DISABLE_LTO	:= $(DISABLE_LTO_CLANG)
+export LTO_CFLAGS DISABLE_LTO
 export LTO_CFLAGS DISABLE_LTO
 
 # LDFINAL_vmlinux and LDFLAGS_FINAL_vmlinux can be set to override
@@ -951,9 +955,12 @@ ifdef CONFIG_CFI
 # cfi-flags are re-tested in prepare-compiler-check
 CFI_CFLAGS	:= $(cfi-clang-flags)
 KBUILD_CFLAGS	+= $(CFI_CFLAGS)
+CFI_CFLAGS	:= $(cfi-clang-flags)
+KBUILD_CFLAGS	+= $(CFI_CFLAGS)
 
 DISABLE_CFI	:= $(DISABLE_CFI_CLANG)
 DISABLE_LTO	+= $(DISABLE_CFI)
+export CFI_CFLAGS DISABLE_CFI
 export CFI_CFLAGS DISABLE_CFI
 endif
 
