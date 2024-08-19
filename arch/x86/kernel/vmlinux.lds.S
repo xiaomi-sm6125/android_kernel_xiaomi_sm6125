@@ -138,12 +138,20 @@ SECTIONS
 		*(.text..L.cfi.jumptable .text..L.cfi.jumptable.*)
 		__cfi_jt_end = .;
 #endif
+#ifdef CONFIG_CFI_CLANG
+		. = ALIGN(PAGE_SIZE);
+		__cfi_jt_start = .;
+		*(.text..L.cfi.jumptable .text..L.cfi.jumptable.*)
+		__cfi_jt_end = .;
+#endif
 	} :text = 0x9090
 
 	NOTES :text :note
 
 	EXCEPTION_TABLE(16) :text = 0x9090
 
+	/* End of text section, which should occupy whole number of pages */
+	_etext = .;
 	/* End of text section, which should occupy whole number of pages */
 	_etext = .;
 	. = ALIGN(PAGE_SIZE);
@@ -420,6 +428,10 @@ INIT_PER_CPU(irq_stack_union);
            "kexec control code size is too big");
 #endif
 
+#ifdef CONFIG_CFI_CLANG
+. = ASSERT((__cfi_jt_end - __cfi_jt_start > 0),
+	   "CFI jump table is empty");
+#endif
 #ifdef CONFIG_CFI_CLANG
 . = ASSERT((__cfi_jt_end - __cfi_jt_start > 0),
 	   "CFI jump table is empty");

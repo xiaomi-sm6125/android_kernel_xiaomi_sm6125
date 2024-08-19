@@ -4,6 +4,7 @@
  * Generic x86 (32-bit and 64-bit) instruction decoder and emulator.
  *
  * Copyright (c) 2005 Keir Fraser
+ * Copyright (C) 2021 XiaoMi, Inc.
  *
  * Linux coding style, mod r/m decoder, segment base fixes, real-mode
  * privileged instructions:
@@ -4503,9 +4504,20 @@ static const struct gprefix pfx_0f_c7_7 = {
 };
 
 
+/*
+ * The "memory" destination is actually always a register, since we come
+ * from the register case of group9.
+ */
+static const struct gprefix pfx_0f_c7_7 = {
+	N, N, N, II(DstMem | ModRM | Op3264 | EmulateOnUD, em_rdpid, rdtscp),
+};
+
+
 static const struct group_dual group9 = { {
 	N, I(DstMem64 | Lock | PageTable, em_cmpxchg8b), N, N, N, N, N, N,
 }, {
+	N, N, N, N, N, N, N,
+	GP(0, &pfx_0f_c7_7),
 	N, N, N, N, N, N, N,
 	GP(0, &pfx_0f_c7_7),
 } };
@@ -5116,6 +5128,7 @@ int x86_decode_insn(struct x86_emulate_ctxt *ctxt, void *insn, int insn_len)
 	ctxt->fetch.end = ctxt->fetch.data + insn_len;
 	ctxt->opcode_len = 1;
 	ctxt->intercept = x86_intercept_none;
+	ctxt->intercept = x86_intercept_none;
 	if (insn_len > 0)
 		memcpy(ctxt->fetch.data, insn, insn_len);
 	else {
@@ -5171,7 +5184,13 @@ int x86_decode_insn(struct x86_emulate_ctxt *ctxt, void *insn, int insn_len)
 			has_seg_override = true;
 			ctxt->seg_override = VCPU_SREG_ES;
 			break;
+			has_seg_override = true;
+			ctxt->seg_override = VCPU_SREG_ES;
+			break;
 		case 0x2e:	/* CS override */
+			has_seg_override = true;
+			ctxt->seg_override = VCPU_SREG_CS;
+			break;
 			has_seg_override = true;
 			ctxt->seg_override = VCPU_SREG_CS;
 			break;
@@ -5179,16 +5198,24 @@ int x86_decode_insn(struct x86_emulate_ctxt *ctxt, void *insn, int insn_len)
 			has_seg_override = true;
 			ctxt->seg_override = VCPU_SREG_SS;
 			break;
+			has_seg_override = true;
+			ctxt->seg_override = VCPU_SREG_SS;
+			break;
 		case 0x3e:	/* DS override */
 			has_seg_override = true;
+			ctxt->seg_override = VCPU_SREG_DS;
 			ctxt->seg_override = VCPU_SREG_DS;
 			break;
 		case 0x64:	/* FS override */
 			has_seg_override = true;
 			ctxt->seg_override = VCPU_SREG_FS;
 			break;
+			has_seg_override = true;
+			ctxt->seg_override = VCPU_SREG_FS;
+			break;
 		case 0x65:	/* GS override */
 			has_seg_override = true;
+			ctxt->seg_override = VCPU_SREG_GS;
 			ctxt->seg_override = VCPU_SREG_GS;
 			break;
 		case 0x40 ... 0x4f: /* REX */
@@ -5280,7 +5307,15 @@ done_prefixes:
 
 				opcode = opcode.u.esc->high[index];
 			} else {
+			if (ctxt->modrm > 0xbf) {
+				size_t size = ARRAY_SIZE(opcode.u.esc->high);
+				u32 index = array_index_nospec(
+					ctxt->modrm - 0xc0, size);
+
+				opcode = opcode.u.esc->high[index];
+			} else {
 				opcode = opcode.u.esc->op[(ctxt->modrm >> 3) & 7];
+			}
 			}
 			break;
 		case InstrDual:
