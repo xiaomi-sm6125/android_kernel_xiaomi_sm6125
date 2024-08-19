@@ -35,6 +35,9 @@
 /* Support upto 3 GVMs: 3 DBQs(Low/Medium/High priority) per GVM */
 #define MAX_DB_QUEUE 9
 
+/* Support upto 3 GVMs: 3 DBQs(Low/Medium/High priority) per GVM */
+#define MAX_DB_QUEUE 9
+
 #define IORESOURCE_HWINF "hgsl_reg_hwinf"
 #define IORESOURCE_GMUCX "hgsl_reg_gmucx"
 

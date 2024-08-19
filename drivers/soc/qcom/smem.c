@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2015, Sony Mobile Communications AB.
+ * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright (c) 2012-2013, 2017, 2019-2020 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -93,17 +94,6 @@
 
 /* Max number of processors/hosts in a system */
 #define SMEM_HOST_COUNT		13
-
-/* Entry range check
- * ptr >= start : Checks if ptr is greater than the start of access region
- * ptr + size >= ptr: Check for integer overflow (On 32bit system where ptr
- * and size are 32bits, ptr + size can wrap around to be a small integer)
- * ptr + size <= end: Checks if ptr+size is less than the end of access region
- */
-#define IN_PARTITION_RANGE(ptr, size, start, end)		\
-	(((void *)(ptr) >= (void *)(start)) &&			\
-	 (((void *)(ptr) + (size)) >= (void *)(ptr)) &&	\
-	 (((void *)(ptr) + (size)) <= (void *)(end)))
 
 /**
   * struct smem_proc_comm - proc_comm communication struct (legacy)
