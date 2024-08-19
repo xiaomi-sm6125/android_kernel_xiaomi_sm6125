@@ -1,6 +1,7 @@
 /* Userspace key control operations
  *
  * Copyright (C) 2004-5 Red Hat, Inc. All Rights Reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  * Written by David Howells (dhowells@redhat.com)
  *
  * This program is free software; you can redistribute it and/or
@@ -327,6 +328,7 @@ long keyctl_update_key(key_serial_t id,
 	payload = NULL;
 	if (plen) {
 		ret = -ENOMEM;
+		payload = kvmalloc(plen, GFP_KERNEL);
 		payload = kvmalloc(plen, GFP_KERNEL);
 		if (!payload)
 			goto error;
@@ -755,6 +757,21 @@ static long __keyctl_read_key(struct key *key, char *buffer, size_t buflen)
 }
 
 /*
+ * Call the read method
+ */
+static long __keyctl_read_key(struct key *key, char *buffer, size_t buflen)
+{
+	long ret;
+
+	down_read(&key->sem);
+	ret = key_validate(key);
+	if (ret == 0)
+		ret = key->type->read(key, buffer, buflen);
+	up_read(&key->sem);
+	return ret;
+}
+
+/*
  * Read a key's payload.
  *
  * The key must either grant the caller Read permission, or it must grant the
@@ -771,11 +788,14 @@ long keyctl_read_key(key_serial_t keyid, char __user *buffer, size_t buflen)
 	long ret;
 	char *key_data = NULL;
 	size_t key_data_len;
+	char *key_data = NULL;
+	size_t key_data_len;
 
 	/* find the key first */
 	key_ref = lookup_user_key(keyid, 0, 0);
 	if (IS_ERR(key_ref)) {
 		ret = -ENOKEY;
+		goto out;
 		goto out;
 	}
 
@@ -784,12 +804,14 @@ long keyctl_read_key(key_serial_t keyid, char __user *buffer, size_t buflen)
 	ret = key_read_state(key);
 	if (ret < 0)
 		goto key_put_out; /* Negatively instantiated */
+		goto key_put_out; /* Negatively instantiated */
 
 	/* see if we can read it directly */
 	ret = key_permission(key_ref, KEY_NEED_READ);
 	if (ret == 0)
 		goto can_read_key;
 	if (ret != -EACCES)
+		goto key_put_out;
 		goto key_put_out;
 
 	/* we can't; see if it's searchable from this process's keyrings
@@ -798,6 +820,7 @@ long keyctl_read_key(key_serial_t keyid, char __user *buffer, size_t buflen)
 	 */
 	if (!is_key_possessed(key_ref)) {
 		ret = -EACCES;
+		goto key_put_out;
 		goto key_put_out;
 	}
 
@@ -869,6 +892,7 @@ can_read_key:
 
 key_put_out:
 	key_put(key);
+out:
 out:
 	return ret;
 }
@@ -953,6 +977,8 @@ long keyctl_chown_key(key_serial_t id, uid_t user, gid_t group)
 				key_quota_root_maxbytes : key_quota_maxbytes;
 
 			spin_lock(&newowner->lock);
+			if (newowner->qnkeys + 1 > maxkeys ||
+			    newowner->qnbytes + key->quotalen > maxbytes ||
 			if (newowner->qnkeys + 1 > maxkeys ||
 			    newowner->qnbytes + key->quotalen > maxbytes ||
 			    newowner->qnbytes + key->quotalen <
