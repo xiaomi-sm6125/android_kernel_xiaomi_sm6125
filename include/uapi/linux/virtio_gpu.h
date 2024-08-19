@@ -2,6 +2,7 @@
  * Virtio GPU Device
  *
  * Copyright Red Hat, Inc. 2013-2014
+ * Copyright (C) 2021 XiaoMi, Inc.
  *
  * Authors:
  *     Dave Airlie <airlied@redhat.com>
@@ -40,6 +41,33 @@
 
 #include <linux/types.h>
 
+/*
+ * VIRTIO_GPU_CMD_CTX_*
+ * VIRTIO_GPU_CMD_*_3D
+ */
+#define VIRTIO_GPU_F_VIRGL               0
+
+/*
+ * VIRTIO_GPU_CMD_GET_EDID
+ */
+#define VIRTIO_GPU_F_EDID                1
+/*
+ * VIRTIO_GPU_CMD_RESOURCE_ASSIGN_UUID
+ */
+#define VIRTIO_GPU_F_RESOURCE_UUID       2
+/*
+ * VIRTIO_GPU_CMD_RESOURCE_CREATE_BLOB
+ */
+#define VIRTIO_GPU_F_RESOURCE_BLOB       3
+/*
+ * VIRTIO_GPU_CMD_RESOURCE_MAP
+ * VIRTIO_GPU_CMD_RESOURCE_UMAP
+ */
+#define VIRTIO_GPU_F_HOST_VISIBLE        4
+/*
+ * VIRTIO_GPU_CMD_CTX_CREATE_V2
+ */
+#define VIRTIO_GPU_F_VULKAN              5
 /*
  * VIRTIO_GPU_CMD_CTX_*
  * VIRTIO_GPU_CMD_*_3D
@@ -115,6 +143,13 @@ enum virtio_gpu_ctrl_type {
 	VIRTIO_GPU_RESP_OK_RESOURCE_PLANE_INFO_LEGACY = 0x1104,
 	/* CHROMIUM: success responses */
 	VIRTIO_GPU_RESP_OK_RESOURCE_PLANE_INFO = 0x11FF,
+	VIRTIO_GPU_RESP_OK_RESOURCE_UUID,
+	VIRTIO_GPU_RESP_OK_MAP_INFO,
+
+	/* CHROMIUM: legacy responses */
+	VIRTIO_GPU_RESP_OK_RESOURCE_PLANE_INFO_LEGACY = 0x1104,
+	/* CHROMIUM: success responses */
+	VIRTIO_GPU_RESP_OK_RESOURCE_PLANE_INFO = 0x11FF,
 
 	/* error responses */
 	VIRTIO_GPU_RESP_ERR_UNSPEC = 0x1200,
@@ -123,6 +158,7 @@ enum virtio_gpu_ctrl_type {
 	VIRTIO_GPU_RESP_ERR_INVALID_RESOURCE_ID,
 	VIRTIO_GPU_RESP_ERR_INVALID_CONTEXT_ID,
 	VIRTIO_GPU_RESP_ERR_INVALID_PARAMETER,
+	VIRTIO_GPU_RESP_ERR_INVALID_MEMORY_ID,
 	VIRTIO_GPU_RESP_ERR_INVALID_MEMORY_ID,
 };
 
@@ -176,6 +212,7 @@ struct virtio_gpu_resource_create_2d {
 	struct virtio_gpu_ctrl_hdr hdr;
 	__le32 resource_id;
 	/* memory_type is VIRTIO_GPU_MEMORY_TRANSFER */
+	/* memory_type is VIRTIO_GPU_MEMORY_TRANSFER */
 	__le32 format;
 	__le32 width;
 	__le32 height;
@@ -217,6 +254,7 @@ struct virtio_gpu_resource_attach_backing {
 	struct virtio_gpu_ctrl_hdr hdr;
 	__le32 resource_id;
 	__le32 nr_entries;
+	/* struct virtio_gpu_mem_entry entries follow here */
 	/* struct virtio_gpu_mem_entry entries follow here */
 };
 
@@ -303,6 +341,7 @@ struct virtio_gpu_cmd_submit {
 
 #define VIRTIO_GPU_CAPSET_VIRGL 1
 #define VIRTIO_GPU_CAPSET_VIRGL2 2
+#define VIRTIO_GPU_CAPSET_VIRGL2 2
 
 /* VIRTIO_GPU_CMD_GET_CAPSET_INFO */
 struct virtio_gpu_get_capset_info {
@@ -346,6 +385,15 @@ struct virtio_gpu_resp_edid {
 	__le32 size;
 	__le32 padding;
 	__u8 edid[1024];
+};
+
+/* VIRTIO_GPU_RESP_OK_RESOURCE_PLANE_INFO */
+struct virtio_gpu_resp_resource_plane_info {
+	struct virtio_gpu_ctrl_hdr hdr;
+	__le32 num_planes;
+	__le64 format_modifier;
+	__le32 strides[4];
+	__le32 offsets[4];
 };
 
 /* VIRTIO_GPU_RESP_OK_RESOURCE_PLANE_INFO */

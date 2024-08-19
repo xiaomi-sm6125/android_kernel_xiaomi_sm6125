@@ -28,6 +28,7 @@ struct bg_ui_data {
 	__u32  cmd;
 	__u32  num_of_words;
 	__u8 __user *buffer;
+	__u8 __user *buffer;
 };
 
 enum bg_event_type {
