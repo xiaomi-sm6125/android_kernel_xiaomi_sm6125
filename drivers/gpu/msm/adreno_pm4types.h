@@ -109,6 +109,8 @@
 
 #define CP_WHERE_AM_I 0x62
 
+#define CP_WHERE_AM_I 0x62
+
 /* Enable/Disable/Defer A5x global preemption model */
 #define CP_PREEMPT_ENABLE_GLOBAL    0x69
 

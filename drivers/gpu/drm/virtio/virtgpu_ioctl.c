@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015 Red Hat, Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
  * All Rights Reserved.
  *
  * Authors:
@@ -24,6 +25,10 @@
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
+
+#include <linux/dma-mapping.h>
+#include <linux/file.h>
+#include <linux/sync_file.h>
 
 #include <linux/dma-mapping.h>
 #include <linux/file.h>
@@ -272,6 +277,12 @@ static int virtio_gpu_getparam_ioctl(struct drm_device *dev, void *data,
 	case VIRTGPU_PARAM_HOST_VISIBLE:
 		value = vgdev->has_host_visible == true ? 1 : 0;
 		break;
+	case VIRTGPU_PARAM_RESOURCE_BLOB:
+		value = vgdev->has_resource_blob == true ? 1 : 0;
+		break;
+	case VIRTGPU_PARAM_HOST_VISIBLE:
+		value = vgdev->has_host_visible == true ? 1 : 0;
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -349,9 +360,11 @@ static int virtio_gpu_resource_info_ioctl(struct drm_device *dev, void *data,
 					  struct drm_file *file_priv)
 {
 	struct virtio_gpu_device *vgdev = dev->dev_private;
+	struct virtio_gpu_device *vgdev = dev->dev_private;
 	struct drm_virtgpu_resource_info *ri = data;
 	struct drm_gem_object *gobj = NULL;
 	struct virtio_gpu_object *qobj = NULL;
+	int ret = 0;
 	int ret = 0;
 
 	gobj = drm_gem_object_lookup(file_priv, ri->bo_handle);
@@ -382,7 +395,29 @@ static int virtio_gpu_resource_info_ioctl(struct drm_device *dev, void *data,
 
 	ri->format_modifier = qobj->format_modifier;
 out:
+	ri->size = qobj->gem_base.size;
+
+	if (!qobj->create_callback_done) {
+		ret = wait_event_interruptible(vgdev->resp_wq,
+					       qobj->create_callback_done);
+		if (ret)
+			goto out;
+	}
+
+	if (qobj->num_planes) {
+		int i;
+
+		ri->num_planes = qobj->num_planes;
+		for (i = 0; i < qobj->num_planes; i++) {
+			ri->strides[i] = qobj->strides[i];
+			ri->offsets[i] = qobj->offsets[i];
+		}
+	}
+
+	ri->format_modifier = qobj->format_modifier;
+out:
 	drm_gem_object_put_unlocked(gobj);
+	return ret;
 	return ret;
 }
 
@@ -755,6 +790,10 @@ struct drm_ioctl_desc virtio_gpu_ioctls[DRM_VIRTIO_NUM_IOCTLS] = {
 
 	DRM_IOCTL_DEF_DRV(VIRTGPU_GET_CAPS, virtio_gpu_get_caps_ioctl,
 			  DRM_AUTH | DRM_RENDER_ALLOW),
+
+	DRM_IOCTL_DEF_DRV(VIRTGPU_RESOURCE_CREATE_BLOB,
+			  virtio_gpu_resource_create_blob_ioctl,
+			  DRM_RENDER_ALLOW)
 
 	DRM_IOCTL_DEF_DRV(VIRTGPU_RESOURCE_CREATE_BLOB,
 			  virtio_gpu_resource_create_blob_ioctl,

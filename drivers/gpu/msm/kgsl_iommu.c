@@ -1763,6 +1763,9 @@ static int kgsl_iommu_start(struct kgsl_mmu *mmu)
 	kgsl_iommu_set_pt(mmu, mmu->defaultpagetable);
 	set_bit(KGSL_MMU_STARTED, &mmu->flags);
 	return 0;
+	kgsl_iommu_set_pt(mmu, mmu->defaultpagetable);
+	set_bit(KGSL_MMU_STARTED, &mmu->flags);
+	return 0;
 }
 
 static int
@@ -2143,6 +2146,8 @@ static void kgsl_iommu_stop(struct kgsl_mmu *mmu)
 		for (i = 0; i < KGSL_IOMMU_CONTEXT_MAX; i++)
 			_detach_context(&iommu->ctx[i]);
 	}
+
+	clear_bit(KGSL_MMU_STARTED, &mmu->flags);
 
 	clear_bit(KGSL_MMU_STARTED, &mmu->flags);
 }
@@ -2530,6 +2535,8 @@ static int kgsl_iommu_set_svm_region(struct kgsl_pagetable *pagetable,
 	struct kgsl_iommu_pt *pt = pagetable->priv;
 	struct rb_node *node;
 
+	/* Make sure the requested address doesn't fall out of SVM range */
+	if (!iommu_addr_in_svm_ranges(pt, gpuaddr, size))
 	/* Make sure the requested address doesn't fall out of SVM range */
 	if (!iommu_addr_in_svm_ranges(pt, gpuaddr, size))
 		return -ENOMEM;

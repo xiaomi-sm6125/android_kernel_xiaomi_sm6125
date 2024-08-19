@@ -181,6 +181,9 @@ void adreno_ringbuffer_submit(struct adreno_ringbuffer *rb,
 int adreno_ringbuffer_submit_spin_nosync(struct adreno_ringbuffer *rb,
 		struct adreno_submit_time *time, unsigned int timeout);
 
+int adreno_ringbuffer_submit_spin_nosync(struct adreno_ringbuffer *rb,
+		struct adreno_submit_time *time, unsigned int timeout);
+
 int adreno_ringbuffer_submit_spin(struct adreno_ringbuffer *rb,
 		struct adreno_submit_time *time, unsigned int timeout);
 

@@ -285,6 +285,16 @@ bool gmu_core_dev_cx_is_on(struct kgsl_device *device)
 	return true;
 }
 
+bool gmu_core_dev_cx_is_on(struct kgsl_device *device)
+{
+	struct gmu_dev_ops *ops = GMU_DEVICE_OPS(device);
+
+	if (ops && ops->cx_is_on)
+		return ops->cx_is_on(device);
+
+	return true;
+}
+
 bool gmu_core_is_initialized(struct kgsl_device *device)
 {
 	struct gmu_core_ops *gmu_core_ops = GMU_CORE_OPS(device);

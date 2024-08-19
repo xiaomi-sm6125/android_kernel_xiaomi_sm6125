@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015 Red Hat, Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
  * All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
@@ -25,9 +26,15 @@
 
 #include <linux/moduleparam.h>
 
+#include <linux/moduleparam.h>
+
 #include <drm/ttm/ttm_execbuf_util.h>
 
 #include "virtgpu_drv.h"
+#include <uapi/drm/virtgpu_drm.h>
+
+static int virtio_gpu_virglrenderer_workaround = 1;
+module_param_named(virglhack, virtio_gpu_virglrenderer_workaround, int, 0400);
 #include <uapi/drm/virtgpu_drm.h>
 
 static int virtio_gpu_virglrenderer_workaround = 1;
@@ -50,7 +57,27 @@ static int virtio_gpu_resource_id_get(struct virtio_gpu_device *vgdev,
 		*resid = handle;
 	} else {
 		int handle;
+	if (virtio_gpu_virglrenderer_workaround) {
+		/*
+		 * Hack to avoid re-using resource IDs.
+		 *
+		 * virglrenderer versions up to (and including) 0.7.0
+		 * can't deal with that.  virglrenderer commit
+		 * "f91a9dd35715 Fix unlinking resources from hash
+		 * table." (Feb 2019) fixes the bug.
+		 */
+		static atomic_t seqno = ATOMIC_INIT(0);
+		int handle = atomic_inc_return(&seqno);
+		*resid = handle;
+	} else {
+		int handle;
 
+		idr_preload(GFP_KERNEL);
+		spin_lock(&vgdev->resource_idr_lock);
+		handle = idr_alloc(&vgdev->resource_idr, NULL, 1, 0,
+				   GFP_NOWAIT);
+		spin_unlock(&vgdev->resource_idr_lock);
+		idr_preload_end();
 		idr_preload(GFP_KERNEL);
 		spin_lock(&vgdev->resource_idr_lock);
 		handle = idr_alloc(&vgdev->resource_idr, NULL, 1, 0,
@@ -60,7 +87,11 @@ static int virtio_gpu_resource_id_get(struct virtio_gpu_device *vgdev,
 
 		if (handle < 0)
 			return handle;
+		if (handle < 0)
+			return handle;
 
+		*resid = handle;
+	}
 		*resid = handle;
 	}
 	return 0;
@@ -68,6 +99,11 @@ static int virtio_gpu_resource_id_get(struct virtio_gpu_device *vgdev,
 
 static void virtio_gpu_resource_id_put(struct virtio_gpu_device *vgdev, uint32_t id)
 {
+	if (!virtio_gpu_virglrenderer_workaround) {
+		spin_lock(&vgdev->resource_idr_lock);
+		idr_remove(&vgdev->resource_idr, id);
+		spin_unlock(&vgdev->resource_idr_lock);
+	}
 	if (!virtio_gpu_virglrenderer_workaround) {
 		spin_lock(&vgdev->resource_idr_lock);
 		idr_remove(&vgdev->resource_idr, id);
@@ -100,6 +136,12 @@ static void virtio_gpu_ttm_bo_destroy(struct ttm_buffer_object *tbo)
 #define VIRTGPU_BLOB_MEM_CACHE_UNCACHED  0x2000
 #define VIRTGPU_BLOB_MEM_CACHE_WC        0x3000
 
+// define internally for testing purposes
+#define VIRTGPU_BLOB_MEM_CACHE_MASK      0xf000
+#define VIRTGPU_BLOB_MEM_CACHE_CACHED    0x1000
+#define VIRTGPU_BLOB_MEM_CACHE_UNCACHED  0x2000
+#define VIRTGPU_BLOB_MEM_CACHE_WC        0x3000
+
 static void virtio_gpu_init_ttm_placement(struct virtio_gpu_object *vgbo)
 {
 	u32 c = 1;
@@ -113,6 +155,30 @@ static void virtio_gpu_init_ttm_placement(struct virtio_gpu_object *vgbo)
 	vgbo->placement.busy_placement = &vgbo->placement_code;
 	vgbo->placement_code.fpfn = 0;
 	vgbo->placement_code.lpfn = 0;
+
+	switch (cache_type) {
+	case VIRTGPU_BLOB_MEM_CACHE_CACHED:
+		ttm_caching_flags = TTM_PL_FLAG_CACHED;
+		break;
+	case VIRTGPU_BLOB_MEM_CACHE_WC:
+		ttm_caching_flags = TTM_PL_FLAG_WC;
+		break;
+	case VIRTGPU_BLOB_MEM_CACHE_UNCACHED:
+		ttm_caching_flags = TTM_PL_FLAG_UNCACHED;
+		break;
+	default:
+		ttm_caching_flags = TTM_PL_MASK_CACHING;
+	}
+
+	if (!has_guest && vgbo->blob) {
+		vgbo->placement_code.flags =
+			ttm_caching_flags | TTM_PL_FLAG_VRAM |
+			TTM_PL_FLAG_NO_EVICT;
+	} else {
+		vgbo->placement_code.flags =
+			TTM_PL_MASK_CACHING | TTM_PL_FLAG_TT |
+			TTM_PL_FLAG_NO_EVICT;
+	}
 
 	switch (cache_type) {
 	case VIRTGPU_BLOB_MEM_CACHE_CACHED:
@@ -174,9 +240,12 @@ int virtio_gpu_object_create(struct virtio_gpu_device *vgdev,
 	bo->dumb = params->dumb;
 	bo->blob = params->blob;
 	bo->blob_mem = params->blob_mem;
+	bo->blob = params->blob;
+	bo->blob_mem = params->blob_mem;
 
 	if (params->virgl) {
 		virtio_gpu_cmd_resource_create_3d(vgdev, bo, params, fence);
+	} else if (params->dumb) {
 	} else if (params->dumb) {
 		virtio_gpu_cmd_create_resource(vgdev, bo, params, fence);
 	}
