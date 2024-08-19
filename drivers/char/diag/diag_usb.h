@@ -51,6 +51,11 @@ struct diag_usb_event_q {
 	int data;
 };
 
+struct diag_usb_event_q {
+	struct list_head link;
+	int data;
+};
+
 struct diag_usb_info {
 	int id;
 	int ctxt;
@@ -67,6 +72,7 @@ struct diag_usb_info {
 	spinlock_t lock;
 	spinlock_t write_lock;
 	spinlock_t event_lock;
+	spinlock_t event_lock;
 	struct usb_diag_ch *hdl;
 	struct diag_mux_ops *ops;
 	unsigned char *read_buf;
@@ -74,8 +80,10 @@ struct diag_usb_info {
 	struct work_struct read_work;
 	struct work_struct read_done_work;
 	struct work_struct event_work;
+	struct work_struct event_work;
 	struct workqueue_struct *usb_wq;
 	wait_queue_head_t wait_q;
+	struct list_head event_q;
 	struct list_head event_q;
 };
 
