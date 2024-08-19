@@ -4614,6 +4614,7 @@ hw_dump:
 		cur_time.tv_sec,
 		cur_time.tv_usec);
 	memset(&icp_dump_args, 0, sizeof(icp_dump_args));
+	memset(&icp_dump_args, 0, sizeof(icp_dump_args));
 	rc  = cam_mem_get_cpu_buf(dump_args->buf_handle,
 		&icp_dump_args.cpu_addr, &icp_dump_args.buf_len);
 	if (!icp_dump_args.cpu_addr || !icp_dump_args.buf_len || rc) {

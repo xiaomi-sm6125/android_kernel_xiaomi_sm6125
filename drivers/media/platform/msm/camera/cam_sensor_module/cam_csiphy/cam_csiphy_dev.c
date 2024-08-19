@@ -189,12 +189,16 @@ static int32_t cam_csiphy_platform_probe(struct platform_device *pdev)
 	if (rc) {
 		CAM_ERR(CAM_CSIPHY, "CPAS registration failed rc: %d", rc);
 		goto csiphy_unregister_subdev;
+		goto csiphy_unregister_subdev;
 	}
 	CAM_DBG(CAM_CSIPHY, "CPAS registration successful handle=%d",
 		cpas_parms.client_handle);
 	new_csiphy_dev->cpas_handle = cpas_parms.client_handle;
 
 	return rc;
+
+csiphy_unregister_subdev:
+	cam_unregister_subdev(&(new_csiphy_dev->v4l2_dev_str));
 
 csiphy_unregister_subdev:
 	cam_unregister_subdev(&(new_csiphy_dev->v4l2_dev_str));

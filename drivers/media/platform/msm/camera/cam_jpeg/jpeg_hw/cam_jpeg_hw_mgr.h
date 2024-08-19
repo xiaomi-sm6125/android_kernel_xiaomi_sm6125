@@ -84,6 +84,7 @@ struct cam_jpeg_hw_cdm_info_t {
  * @req_id: Request Id
  * @submit_timestamp: Timestamp of submitting request
  * @num_hw_entry_processed: Cdm payloads already processed
+ * @num_hw_entry_processed: Cdm payloads already processed
  */
 struct cam_jpeg_hw_cfg_req {
 	struct list_head list;
@@ -91,6 +92,7 @@ struct cam_jpeg_hw_cfg_req {
 	uint32_t dev_type;
 	uintptr_t req_id;
 	struct timeval submit_timestamp;
+	uint32_t num_hw_entry_processed;
 	uint32_t num_hw_entry_processed;
 };
 

@@ -115,6 +115,8 @@ struct cam_vfe_bus_ver2_common_data {
 	struct cam_vfe_bus_ver2_reg_data           *reg_data;
 	uint32_t                                    io_buf_update[
 		MAX_REG_VAL_PAIR_SIZE];
+	uint32_t                                    io_buf_update[
+		MAX_REG_VAL_PAIR_SIZE];
 	struct cam_vfe_bus_irq_evt_payload          evt_payload[
 		CAM_VFE_BUS_VER2_PAYLOAD_MAX];
 	struct list_head                            free_payload_list;
@@ -3077,6 +3079,7 @@ static int cam_vfe_bus_update_wm(void *priv, void *cmd_args,
 
 	io_cfg = update_buf->wm_update->io_cfg;
 	reg_val_pair = &vfe_out_data->common_data->io_buf_update[0];
+	reg_val_pair = &vfe_out_data->common_data->io_buf_update[0];
 
 	for (i = 0, j = 0; i < vfe_out_data->num_wm; i++) {
 		if (j >= (MAX_REG_VAL_PAIR_SIZE - MAX_BUF_UPDATE_REG_NUM * 2)) {
@@ -3088,6 +3091,14 @@ static int cam_vfe_bus_update_wm(void *priv, void *cmd_args,
 
 		wm_data = vfe_out_data->wm_res[i]->res_priv;
 		ubwc_client = wm_data->hw_regs->ubwc_regs;
+
+		if (wm_data->index < 3 ||
+			(wm_data->is_lite && wm_data->index == 3)) {
+			reg_val_pair = &wm_data->io_buf_update[0];
+			loop_size = wm_data->irq_subsample_period + 1;
+		} else {
+			loop_size = 1;
+		}
 
 		if (wm_data->index < 3 ||
 			(wm_data->is_lite && wm_data->index == 3)) {
@@ -3234,6 +3245,7 @@ static int cam_vfe_bus_update_hfr(void *priv, void *cmd_args,
 
 	hfr_cfg = update_hfr->hfr_update;
 	reg_val_pair = &vfe_out_data->common_data->io_buf_update[0];
+	reg_val_pair = &vfe_out_data->common_data->io_buf_update[0];
 
 	for (i = 0, j = 0; i < vfe_out_data->num_wm; i++) {
 		if (j >= (MAX_REG_VAL_PAIR_SIZE - MAX_BUF_UPDATE_REG_NUM * 2)) {
@@ -3244,6 +3256,10 @@ static int cam_vfe_bus_update_hfr(void *priv, void *cmd_args,
 		}
 
 		wm_data = vfe_out_data->wm_res[i]->res_priv;
+
+		if (wm_data->index < 3 ||
+			(wm_data->is_lite && wm_data->index == 3))
+			reg_val_pair = &wm_data->io_buf_update[0];
 
 		if (wm_data->index < 3 ||
 			(wm_data->is_lite && wm_data->index == 3))
