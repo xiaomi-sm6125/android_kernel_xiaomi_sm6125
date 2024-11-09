@@ -772,42 +772,6 @@ static int max989xx_calib_get(uint32_t* calib_value, int ch)
 	return found;
 }
 
-static int max989xx_calib_save (uint32_t calib_value, int ch)
-{
-	struct file *pfile = NULL;
-	mm_segment_t old_fs;
-	int ret = 0;
-	loff_t pos = 0;
-	const char * filename = NULL;
-
-	if (ch == MAX98927L)
-		filename = CALIBRATE_FILE_L;
-	else if (ch == MAX98927R)
-		filename = CALIBRATE_FILE_R;
-	else {
-		pr_err("%s: invalid ch: %d\n", __func__, ch);
-		return -1;
-	}
-
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
-
-	pfile = filp_open(filename, O_RDWR | O_CREAT, 0666);
-	if (!IS_ERR(pfile)) {
-		pr_info("%s: save %s, calib_value=%d\n",
-			__func__, filename, calib_value);
-		vfs_write(pfile, (char *)&calib_value, sizeof(uint32_t), &pos);
-		filp_close(pfile, NULL);
-	} else {
-		pr_info("%s: %s open failed! \n", __func__, filename);
-		ret = -1;
-	}
-
-	set_fs(old_fs);
-
-	return ret;
-}
-
 static inline bool rdc_check_valid(uint32_t rdc, int ch)
 {
 	int rdc_min, rdc_max;

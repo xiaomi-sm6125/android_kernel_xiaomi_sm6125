@@ -34,7 +34,7 @@ export $(shell sed 's/=.*//' $(srctree)/techpack/audio/config/sm8150auto.conf)
 endif
 ifeq ($(CONFIG_ARCH_TRINKET), y)
 include $(srctree)/techpack/audio/config/trinketauto.conf
-export
+export $(shell sed 's/=.*//' $(srctree)/techpack/audio/config/trinketauto.conf)
 endif
 
 # Use USERINCLUDE when you must reference the UAPI directories only.

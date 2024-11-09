@@ -66,7 +66,7 @@
 			compatible = "arm,armv8";
 			reg = <0x0 0x0>;
 			enable-method = "psci";
-			capacity-dmips-mhz = <1024>;
+			capacity-dmips-mhz = <635>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 			next-level-cache = <&L2_0>;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
@@ -95,7 +95,7 @@
 			compatible = "arm,armv8";
 			reg = <0x0 0x1>;
 			enable-method = "psci";
-			capacity-dmips-mhz = <1024>;
+			capacity-dmips-mhz = <635>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 			next-level-cache = <&L2_0>;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
@@ -121,7 +121,7 @@
 			compatible = "arm,armv8";
 			reg = <0x0 0x2>;
 			enable-method = "psci";
-			capacity-dmips-mhz = <1024>;
+			capacity-dmips-mhz = <635>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 			next-level-cache = <&L2_0>;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
@@ -147,7 +147,7 @@
 			compatible = "arm,armv8";
 			reg = <0x0 0x3>;
 			enable-method = "psci";
-			capacity-dmips-mhz = <1024>;
+			capacity-dmips-mhz = <635>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 			next-level-cache = <&L2_0>;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
@@ -173,7 +173,7 @@
 			compatible = "arm,armv8";
 			reg = <0x0 0x100>;
 			enable-method = "psci";
-			capacity-dmips-mhz = <1638>;
+			capacity-dmips-mhz = <1024>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 			next-level-cache = <&L2_1>;
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
@@ -203,7 +203,7 @@
 			compatible = "arm,armv8";
 			reg = <0x0 0x101>;
 			enable-method = "psci";
-			capacity-dmips-mhz = <1638>;
+			capacity-dmips-mhz = <1024>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 			next-level-cache = <&L2_1>;
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
@@ -229,7 +229,7 @@
 			compatible = "arm,armv8";
 			reg = <0x0 0x102>;
 			enable-method = "psci";
-			capacity-dmips-mhz = <1638>;
+			capacity-dmips-mhz = <1024>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 			next-level-cache = <&L2_1>;
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
@@ -255,7 +255,7 @@
 			compatible = "arm,armv8";
 			reg = <0x0 0x103>;
 			enable-method = "psci";
-			capacity-dmips-mhz = <1638>;
+			capacity-dmips-mhz = <1024>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 			next-level-cache = <&L2_1>;
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
@@ -320,14 +320,14 @@
 
 		CPU_COST_0: core-cost0 {
 			busy-cost-data = <
-				300000	12
-				614400	22
-				864000	39
-				1017600	54
-				1305600	83
-				1420800	102
-				1612800	130
-				1804800	172
+				95   34
+				194   52
+				272   68
+				321   79
+				411  114
+				448  132
+				508  171
+				569  223
 			>;
 			idle-cost-data = <
 				10 8 6 4
@@ -336,14 +336,14 @@
 
 		CPU_COST_1: core-cost1 {
 			busy-cost-data = <
-				300000	211
-				652800	417
-				902400	722
-				1056000	991
-				1401600	1577
-				1536000	1932
-				1804800	2579
-				2016000	3391
+				152   70
+				331  115
+				458  154
+				536  185
+				711  289
+				780  344
+				915  469
+				1024  596
 			>;
 			idle-cost-data = <
 				100 60 40 20
@@ -352,14 +352,14 @@
 
 		CLUSTER_COST_0: cluster-cost0 {
 			busy-cost-data = <
-				300000	5
-				614400	8
-				864000	9
-				1017600	12
-				1305600	18
-				1420800	21
-				1612800	27
-				1804800	36
+				95    5
+				194    8
+				272    9
+				321   12
+				411   18
+				448   21
+				508   27
+				569   36
 			>;
 			idle-cost-data = <
 				4 3 2 1
@@ -368,14 +368,14 @@
 
 		CLUSTER_COST_1: cluster-cost1 {
 			busy-cost-data = <
-				300000	38
-				652800	46
-				902400	52
-				1056000	68
-				1401600	88
-				1536000	100
-				1804800	108
-				2016000	120
+				152   38
+				331   46
+				458   52
+				536   68
+				711   88
+				780  100
+				915  108
+				1024  120
 			>;
 			idle-cost-data = <
 				4 3 2 1
@@ -389,7 +389,7 @@
 	};
 
 	chosen {
-		bootargs = "rcupdate.rcu_expedited=1 rcu_nocbs=0-7";
+		bootargs = "quiet noirqdebug rcu_nocbs=0-7 nosoftlockup mce=ignore_ce";
 	};
 
 	soc: soc { };
@@ -879,6 +879,19 @@
 			<0xf523000 0x1400>;
 		reg-names = "osm_pwrcl_base", "osm_perfcl_base";
 		#clock-cells = <1>;
+		qcom,cpufreq-table-0 =
+			<864000>,
+			<1017600>,
+			<1305600>,
+			<1612800>,
+			<1804800>;
+
+		qcom,cpufreq-table-4 =
+			<902400>,
+			<1401600>,
+			<1536000>,
+			<1804800>,
+			<2016000>;
 	};
 
 	clock_debugcc: qcom,cc-debug {
@@ -1024,7 +1037,7 @@
 
 		/* PM QoS */
 		qcom,pm-qos-cpu-groups = <0x0f 0xf0>;
-		qcom,pm-qos-cpu-group-latency-us = <26 26>;
+		qcom,pm-qos-cpu-group-latency-us = <43 43>;
 		qcom,pm-qos-default-cpu = <0>;
 
 		pinctrl-names = "dev-reset-assert", "dev-reset-deassert";
@@ -1218,7 +1231,6 @@
 		qcom,bark-time = <15000>;
 		qcom,pet-time = <8000>;
 		qcom,ipi-ping;
-		qcom,wakeup-enable;
 		qcom,scandump-sizes = <0x40000>;
 	};
 
@@ -1686,7 +1698,8 @@
 
 				msm_cdsp_rm: qcom,msm_cdsp_rm {
 					compatible = "qcom,msm-cdsp-rm";
-					qcom,qos-latency-us = <44>;
+					qcom,qos-cores = <0 1 2 3>;
+					qcom,qos-latency-us = <43>;
 					qcom,qos-maxhold-ms = <20>;
 					#cooling-cells = <2>;
 				};
@@ -2211,10 +2224,10 @@
 
 		/* PM QoS */
 		qcom,pm-qos-irq-type = "affine_irq";
-		qcom,pm-qos-irq-latency = <40 40>;
+		qcom,pm-qos-irq-latency = <43 43>;
 		qcom,pm-qos-cpu-groups = <0x0f 0xf0>;
-		qcom,pm-qos-cmdq-latency-us = <40 40>, <40 40>;
-		qcom,pm-qos-legacy-latency-us = <40 40>, <40 40>;
+		qcom,pm-qos-cmdq-latency-us = <43 43>, <43 43>;
+		qcom,pm-qos-legacy-latency-us = <43 43>, <43 43>;
 
 		qcom,scaling-lower-bus-speed-mode = "DDR52";
 
@@ -2283,9 +2296,9 @@
 
 		/* PM QoS */
 		qcom,pm-qos-irq-type = "affine_irq";
-		qcom,pm-qos-irq-latency = <40 40>;
+		qcom,pm-qos-irq-latency = <43 43>;
 		qcom,pm-qos-cpu-groups = <0x0f 0xf0>;
-		qcom,pm-qos-legacy-latency-us = <40 40>, <40 40>;
+		qcom,pm-qos-legacy-latency-us = <43 43>, <43 43>;
 
 		clocks = <&clock_gcc GCC_SDCC2_AHB_CLK>,
 			<&clock_gcc GCC_SDCC2_APPS_CLK>;
@@ -2450,7 +2463,7 @@
 		BW_OPP_ENTRY(1017, 8); /* 7759 MB/s */
 		BW_OPP_ENTRY(1353, 8); /*10322 MB/s */
 		BW_OPP_ENTRY(1555, 8); /*11863 MB/s */
-		BW_OPP_ENTRY(1804, 8); /*13763 MB/s */
+		BW_OPP_ENTRY(1866, 8); /*14236 MB/s */
 	};
 
 	suspendable_ddr4_bw_opp_table: suspendable-ddr4-bw-opp-table {
@@ -2465,7 +2478,7 @@
 		BW_OPP_ENTRY(1017, 8); /* 7759 MB/s */
 		BW_OPP_ENTRY(1353, 8); /*10322 MB/s */
 		BW_OPP_ENTRY(1555, 8); /*11863 MB/s */
-		BW_OPP_ENTRY(1804, 8); /*13763 MB/s */
+		BW_OPP_ENTRY(1866, 8); /*14236 MB/s */
 	};
 
 	ddr3_bw_opp_table: ddr3-bw-opp-table {
@@ -2593,7 +2606,7 @@
 				<  902400 MHZ_TO_MBPS( 451, 8) >,
 				< 1401600 MHZ_TO_MBPS(1017, 8) >,
 				< 1804800 MHZ_TO_MBPS(1555, 8) >,
-				< 2016000 MHZ_TO_MBPS(1804, 8) >;
+				< 2016000 MHZ_TO_MBPS(1866, 8) >;
 		};
 	};
 
@@ -2669,7 +2682,7 @@
 				< 1056000 MHZ_TO_MBPS( 547, 8) >,
 				< 1401680 MHZ_TO_MBPS( 768, 8) >,
 				< 1804800 MHZ_TO_MBPS(1017, 8) >,
-				< 2016000 MHZ_TO_MBPS(1804, 8) >;
+				< 2016000 MHZ_TO_MBPS(1866, 8) >;
 		};
 	};
 
