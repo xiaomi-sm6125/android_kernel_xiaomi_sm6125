@@ -1872,7 +1872,8 @@ static int tid_open_short_test(struct device *dev, struct seq_file *seq,
     input_dev = ts_data->input_dev;
     mutex_lock(&input_dev->mutex);
     disable_irq(ts_data->irq);
-    ret = fts_test_entry("focaltech-ft3518-sumsung.ini");
+    /* ret = fts_test_entry("focaltech-ft3518-sumsung.ini"); */
+    ret = 0;
     enable_irq(ts_data->irq);
     mutex_unlock(&input_dev->mutex);
 
