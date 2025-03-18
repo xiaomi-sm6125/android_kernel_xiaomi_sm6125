@@ -2229,7 +2229,7 @@ static inline unsigned long cpu_util(int cpu)
 }
 
 static inline unsigned long
-cpu_util_freq(int cpu, struct sched_walt_cpu_load *walt_load)
+cpu_util_freq(int cpu)
 {
 	return min(cpu_util(cpu), capacity_orig_of(cpu));
 }

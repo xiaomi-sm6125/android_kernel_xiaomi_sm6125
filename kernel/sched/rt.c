@@ -1586,9 +1586,7 @@ select_task_rq_rt(struct task_struct *p, int cpu, int sd_flag, int flags,
 	if (energy_aware() || may_not_preempt ||
 	    (unlikely(rt_task(curr)) &&
 	     (curr->nr_cpus_allowed < 2 ||
-	      curr->prio <= p->prio))) {
-
-	if (may_not_preempt || !rt_task_fits_capacity(p, cpu)) {
+	      curr->prio <= p->prio)) || !rt_task_fits_capacity(p, cpu)) {
 		int target = find_lowest_rq(p);
 
 
