@@ -1466,7 +1466,7 @@ int dsi_display_check_status(struct drm_connector *connector, void *display,
 exit:
 	/* Handle Panel failures during display disable sequence */
 	if (rc <= 0)
-		atomic_set(&panel->esd_recovery_pending, 1)
+		atomic_set(&panel->esd_recovery_pending, 1);
 #endif
 release_panel_lock:
 	dsi_panel_release_panel_lock(panel);
@@ -1787,13 +1787,13 @@ int dsi_display_set_power(struct drm_connector *connector,
 				drm_notifier_call_chain(DRM_EARLY_EVENT_BLANK, &g_notify_data);
 #endif
 			rc = dsi_panel_set_nolp(display->panel);
-#endif
 #ifdef CONFIG_MACH_XIAOMI_C3J
 			if ((strnstr(saved_command_line, "tianma", strlen(saved_command_line)) != NULL) ||
 			    (strnstr(saved_command_line, "shenchao", strlen(saved_command_line)) != NULL))
 				drm_notifier_call_chain(DRM_EVENT_BLANK, &g_notify_data);
 #endif
 		}
+#endif
 		break;
 	case SDE_MODE_DPMS_OFF:
 #ifdef CONFIG_MACH_XIAOMI_F9S
@@ -1812,16 +1812,12 @@ int dsi_display_set_power(struct drm_connector *connector,
 #endif
 	}
 
-#ifndef CONFIG_MACH_XIAOMI_F9S
-	dev->pre_sde_power_mode = power_mode;
-#else
 	pr_debug("Power mode transition from %d to %d %s",
 		display->panel->power_mode, power_mode,
 		rc ? "failed" : "successful");
 
 	if (!rc)
 		display->panel->power_mode = power_mode;
-#endif
 
 	return rc;
 }
@@ -6878,8 +6874,7 @@ static struct dsi_display_ext_bridge *dsi_display_ext_get_bridge(
 			}
 		}
 	}
-#endif
-
+#else
     for (i = 0; i < sde_kms->dsi_display_count; i++) {
 		display = sde_kms->dsi_displays[i];
 		bridge_num = display->panel->host_config.ext_bridge_num;
@@ -6889,6 +6884,7 @@ static struct dsi_display_ext_bridge *dsi_display_ext_get_bridge(
 				return &display->ext_bridge[k];
 		}
 	}
+#endif
 
 	return NULL;
 }

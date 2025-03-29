@@ -925,9 +925,10 @@ int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 
 	if ((bl_lvl < bl->bl_min_level) && (bl_lvl != 0))
 		bl_lvl = bl->bl_min_level;
-#endif
-
 	if (panel->host_config.ext_bridge_mode)
+#else
+    if (panel->host_config.ext_bridge_num)
+#endif
 		return 0;
 
 #ifdef CONFIG_MACH_XIAOMI_C3J
@@ -2377,8 +2378,10 @@ static int dsi_panel_parse_misc_features(struct dsi_panel *panel)
 
 	panel->lp11_init = utils->read_bool(utils->data,
 			"qcom,mdss-dsi-lp11-init");
+#ifdef CONFIG_MACH_XIAOMI_F9S
 	panel->samsung_flag = utils->read_bool(utils->data,
 			"qcom,mdss-dsi-samsung-flag");
+#endif
 	return 0;
 }
 
@@ -4371,7 +4374,7 @@ int dsi_panel_set_lp1(struct dsi_panel *panel)
 
 	mutex_unlock(&panel->panel_lock);
 
-    return rc
+    return rc;
 #else
 exit:
 	mutex_unlock(&panel->panel_lock);
@@ -4811,8 +4814,8 @@ int dsi_panel_enable(struct dsi_panel *panel)
 #ifdef CONFIG_MACH_XIAOMI_C3J
 		panel_init_judge = true;
 #endif
-#endif
 	}
+#endif
 	mutex_unlock(&panel->panel_lock);
 	return rc;
 }

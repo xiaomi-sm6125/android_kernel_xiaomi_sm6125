@@ -34,6 +34,7 @@
 #define GPIO_READ_MAX_TIMES             3
 #endif
 
+#define DSI_CLIENT_NAME_SIZE            20
 #define MAX_CMDLINE_PARAM_LEN           512
 #define MAX_CMD_PAYLOAD_SIZE            256
 
