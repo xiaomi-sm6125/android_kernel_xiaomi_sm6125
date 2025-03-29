@@ -1761,7 +1761,7 @@ int dsi_display_set_power(struct drm_connector *connector,
 #ifdef CONFIG_MACH_XIAOMI_C3J
 		if ((strnstr(saved_command_line, "tianma", strlen(saved_command_line)) != NULL) ||
 		    (strnstr(saved_command_line, "shenchao", strlen(saved_command_line)) != NULL))
-			msm_drm_notifier_call_chain(DRM_EARLY_EVENT_BLANK, &g_notify_data);
+			drm_notifier_call_chain(DRM_EARLY_EVENT_BLANK, &g_notify_data);
 #endif
 		rc = dsi_panel_set_lp2(display->panel);
 #ifdef CONFIG_MACH_XIAOMI_C3J
