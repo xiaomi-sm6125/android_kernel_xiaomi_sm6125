@@ -230,6 +230,7 @@ msm_disable_outputs(struct drm_device *dev, struct drm_atomic_state *old_state)
 	int i, blank;
 #else
     int i;
+#endif
 
 	SDE_ATRACE_BEGIN("msm_disable");
 	for_each_connector_in_state(old_state, connector, old_conn_state, i) {

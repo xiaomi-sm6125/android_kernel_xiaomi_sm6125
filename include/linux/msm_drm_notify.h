@@ -28,21 +28,14 @@
 enum {
 	/* panel: power on */
 	MSM_DRM_BLANK_UNBLANK,
-<<<<<<< HEAD
 	/* panel: power off */
 	MSM_DRM_BLANK_POWERDOWN,
 #ifdef CONFIG_MACH_XIAOMI_F9S
 	MSM_DRM_BLANK_LP1,
 	MSM_DRM_BLANK_LP2,
-#endif
-=======
-	MSM_DRM_BLANK_LP1,
-	MSM_DRM_BLANK_LP2,
 	MSM_DRM_BLANK_STANDBY,
 	MSM_DRM_BLANK_SUSPEND,
-	/* panel: power off */
-	MSM_DRM_BLANK_POWERDOWN,
->>>>>>> 52c7e0bf13c0 (drm: msm: extend qcom drm notifier)
+#endif
 };
 
 #ifdef CONFIG_MACH_XIAOMI_C3J
