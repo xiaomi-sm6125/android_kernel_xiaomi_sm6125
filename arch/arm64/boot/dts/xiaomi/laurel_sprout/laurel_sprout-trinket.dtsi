@@ -1,0 +1,142 @@
+#include "../qcom-base/trinket.dtsi"
+#include "../qcom-base/trinket-qrd.dtsi"
+#include "laurel_sprout-trinket-audio.dtsi"
+#include "laurel_sprout-trinket-battery.dtsi"
+#include "laurel_sprout-trinket-camera.dtsi"
+#include "laurel_sprout-trinket-display.dtsi"
+#include "laurel_sprout-trinket-fingerprint.dtsi"
+#include "laurel_sprout-trinket-ir.dtsi"
+#include "laurel_sprout-trinket-memory.dtsi"
+#include "laurel_sprout-trinket-pinctrl.dtsi"
+#include "laurel_sprout-trinket-power.dtsi"
+#include "laurel_sprout-trinket-thermal.dtsi"
+#include "laurel_sprout-trinket-touchscreen.dtsi"
+#include "laurel_sprout-trinket-usb.dtsi"
+
+/ {
+    /delete-node/ mem-offline;
+    cpus {
+        CPU0 {
+            d-cache-size = <0x8000>;
+            i-cache-size = <0x8000>;
+            L2_0 {
+                cache-size = <0x80000>;
+            };
+            L1_TLB_0 {
+                qcom,dump-size = <0x2800>;
+            };
+        };
+        CPU1 {
+            d-cache-size = <0x8000>;
+            i-cache-size = <0x8000>;
+            L2_0 {
+                cache-size = <0x80000>;
+            };
+            L1_TLB_0 {
+                qcom,dump-size = <0x2800>;
+            };
+        };
+        CPU2 {
+            d-cache-size = <0x8000>;
+            i-cache-size = <0x8000>;
+            L2_0 {
+                cache-size = <0x80000>;
+            };
+            L1_TLB_0 {
+                qcom,dump-size = <0x2800>;
+            };
+        };
+        CPU3 {
+            d-cache-size = <0x8000>;
+            i-cache-size = <0x8000>;
+            L2_0 {
+                cache-size = <0x80000>;
+            };
+            L1_TLB_0 {
+                qcom,dump-size = <0x2800>;
+            };
+        };
+        CPU4 {
+            d-cache-size = <0x10000>;
+            i-cache-size = <0x10000>;
+            L2_1 {
+                  cache-size = <0x100000>;
+            };
+        };
+        CPU5 {
+            d-cache-size = <0x10000>;
+            i-cache-size = <0x10000>;
+            L2_1 {
+                  cache-size = <0x100000>;
+            };
+        };
+        CPU6 {
+            d-cache-size = <0x10000>;
+            i-cache-size = <0x10000>;
+            L2_1 {
+                  cache-size = <0x100000>;
+            };
+        };
+        CPU7 {
+            d-cache-size = <0x10000>;
+            i-cache-size = <0x10000>;
+            L2_1 {
+                  cache-size = <0x100000>;
+            };
+        };
+
+    };
+};
+
+&soc {
+    sn_fuse: snfuse@0x1B46134 {
+        compatible = "qcom,sn-fuse";
+        reg = <0x1B46134 0x4>;
+        reg-names = "sn-base";
+    };
+
+    sec_boot_fuse: secbootfuse@0x1B40458 {
+        compatible = "qcom,sec-boot-fuse";
+        reg = <0x1B40458  0x4>;
+        reg-names = "sec-boot-base";
+    };
+
+    cpu_feature_id: cpufeatureid@0x01B44180 {
+        compatible = "qcom,cpu-feature-id";
+        reg = <0x01B44180  0x4>;
+        reg-names = "cpu-feature-id";
+    };
+
+    qcom,msm-imem@c125000 {
+        wt_reset_reason_addr@fe4 {
+            compatible = "qcom,msm-imem-wt_reset_reason_addr";
+            reg = <0xfe4 4>;
+        };
+        tz_reset_reason_addr@7a4 {
+            compatible = "qcom,msm-imem-tz_reset_reason_addr";
+            reg = <0x7a4 4>;
+        };
+    };
+
+    wdog {
+        qcom,bark-time = <15000>;
+        qcom,pet-time = <8000>;
+    };
+
+    qcom_seecom {
+        reg = <0x46d00000 0x3E00000>;
+    };
+
+    qcom_smcinvoke {
+        reg = <0x46d00000 0x3E00000>;
+    };
+
+    qcom,rmtfs_sharedmem@0 {
+        /delete-property/ qcom,vm-nav-path;
+    };
+
+    simtray {
+        compatible = "xiaomi,simtray-status";
+        status-gpio = <&tlmm 98 0x00>;
+    };
+};

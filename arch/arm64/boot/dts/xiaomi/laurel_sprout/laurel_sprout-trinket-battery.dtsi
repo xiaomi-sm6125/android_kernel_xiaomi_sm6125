@@ -1,0 +1,25 @@
+&mtp_batterydata {
+    #include "battery/batterydata-wingtech-Sunwoda-4v4-4040mah.dtsi"
+    #include "battery/batterydata-wingtech-Feimaotui-4v4-4040mah.dtsi"
+    #include "battery/batterydata-wingtech-default-battery-4v4-4040mah.dtsi"
+};
+
+&pmi632_qg {
+    qcom,s2-fifo-length = <4>;
+    qcom,qg-iterm-ma = <330>;
+    qcom,shutdown-temp-diff = <100>; /* 10 degrees C */
+    qcom,ignore-shutdown-soc-secs = <2592000>; /* One month */
+    qcom,shutdown_soc_threshold = <40>; /*40%*/
+};
+
+&pmi632_charger {
+    qcom,fcc-max-ua = <3000000>;
+    qcom,fv-max-uv = <4400000>;
+    qcom,auto-recharge-soc = <99>;
+    qcom,usb-icl-ua = <2000000>;
+    qcom,chg-term-current-ma = <(-200)>;
+    qcom,chg-term-src = <1>;
+    qcom,flash-disable-soc = <0>;
+    qcom,thermal-mitigation = <3000000
+            2500000 2000000 1500000 1000000 500000>;
+};
