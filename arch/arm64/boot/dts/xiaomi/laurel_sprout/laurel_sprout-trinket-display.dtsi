@@ -97,7 +97,6 @@
     qcom,mdss-dsi-white-command-state = "dsi_hs_mode";
     qcom,panel-status-read-white-length = <22>;
 
-    qcom,esd-check-enabled;
     qcom,mdss-dsi-panel-status-check-mode = "error_flag";
 
     qcom,mdss-dsi-display-timings {
@@ -124,7 +123,6 @@
     qcom,mdss-dsi-white-command-state = "dsi_hs_mode";
     qcom,panel-status-read-white-length = <1 1>;
 
-    qcom,esd-check-enabled;
     qcom,mdss-dsi-panel-status-check-mode = "error_flag";
 
     qcom,mdss-dsi-display-timings {
