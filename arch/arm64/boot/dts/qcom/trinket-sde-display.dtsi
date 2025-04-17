@@ -184,7 +184,7 @@
 		   qcom,dsi-panel = <&dsi_s6e8fco_samsung_hdp_video>;
 
 	};
-	   
+
 	dsi_r692a9_gvo_hdp_video_display: qcom,dsi-display@6 {
 		   label = "dsi_r692a9_gvo_hdp_video_display";
 		   qcom,display-type = "primary";
@@ -916,7 +916,6 @@
 	qcom,mdss-dsi-white-command-state = "dsi_hs_mode";
 	qcom,panel-status-read-white-length = <22>;
 
-	qcom,esd-check-enabled;
 	qcom,mdss-dsi-panel-status-check-mode = "error_flag";
 
 	qcom,mdss-dsi-display-timings {
@@ -943,7 +942,6 @@
 	qcom,mdss-dsi-white-command-state = "dsi_hs_mode";
 	qcom,panel-status-read-white-length = <1 1>;
 
-	qcom,esd-check-enabled;
 	qcom,mdss-dsi-panel-status-check-mode = "error_flag";
 
 	qcom,mdss-dsi-display-timings {
